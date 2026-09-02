@@ -161,6 +161,8 @@
   .whoside.lei{background:var(--gradient);}
   .whoside.lui{background:#fff; border:1.5px solid var(--ink);}
   .whoside.entrambi{background:linear-gradient(90deg, var(--magenta) 0%, var(--lilla) 50%, #fff 50%, #fff 100%); border:1.5px solid var(--ink);}
+  .completeness-dot{position:absolute; top:10px; right:10px; width:7px; height:7px; border-radius:50%; background:#2A7A44;}
+  .drag-completeness-dot{width:6px; height:6px; border-radius:50%; background:#2A7A44; flex-shrink:0;}
 
   .empty-state{text-align:center; padding:52px 24px; color:var(--ink-soft); background:var(--paper); border:1px dashed var(--line); border-radius:var(--radius);}
   .empty-state .emoji{font-size:34px; margin-bottom:10px; display:block;}
@@ -339,6 +341,20 @@
   .group-block.is-subgroup .group-title-static{font-size:14px; color:var(--ink-soft);}
   .group-block.is-subgroup{border-left:3px solid var(--lilla);}
   .subgroup-empty-hint{font-size:12px; color:var(--ink-soft); font-style:italic; padding:4px 2px 0;}
+  .modal-nav-btn{
+    position:fixed; top:50%; transform:translateY(-50%); width:44px; height:44px; border-radius:50%;
+    border:1px solid var(--line); background:var(--paper); color:var(--ink); font-size:20px; cursor:pointer;
+    box-shadow:var(--shadow); z-index:60; display:none; align-items:center; justify-content:center;
+  }
+  .modal-nav-btn.visible{display:flex;}
+  .modal-nav-btn:disabled{opacity:.35; cursor:default;}
+  .modal-nav-btn:hover:not(:disabled){box-shadow:var(--shadow-hover);}
+  .modal-nav-prev{left:12px;}
+  .modal-nav-next{right:12px;}
+  @media(min-width:640px){
+    .modal-nav-prev{left:max(12px, calc(50% - 430px));}
+    .modal-nav-next{right:max(12px, calc(50% - 430px));}
+  }
   .select-check{display:flex; align-items:center; padding:2px 4px 2px 2px; flex-shrink:0;}
   .select-check input{width:18px; height:18px; accent-color:var(--magenta); cursor:pointer;}
   .group-select-toolbar{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
@@ -586,6 +602,8 @@
 <button class="fab" id="fabAdd">+</button>
 
 <div class="modal-overlay" id="modalOverlay">
+  <button class="modal-nav-btn modal-nav-prev" id="modalNavPrev" title="Invitato precedente">‹</button>
+  <button class="modal-nav-btn modal-nav-next" id="modalNavNext" title="Invitato successivo">›</button>
   <div class="modal">
     <h2><span id="modalTitle">Nuovo invitato</span><button class="close-x" id="closeModal">✕</button></h2>
 
@@ -795,9 +813,9 @@ Marco e Sara (colleghi)"></textarea>
     {id:'adulti-genitori', label:'Adulti (età genitori)'}
   ];
   const IMPORTANZA_LABELS = [
-    'Costretto a invitarlo',
-    'Simpatico',
-    'Amico',
+    'Per forza',
+    'OK',
+    'Fun',
     'Adoro',
     'Se non viene cambio data'
   ];
@@ -907,6 +925,13 @@ Marco e Sara (colleghi)"></textarea>
   function isLinkedElsewhere(id){ return guests.some(g=>g.isPlusOneOf===id); }
   function getLinkedPlusOne(id){ return guests.find(g=>g.isPlusOneOf===id); }
 
+  // "Completo fino a importanza" = ha almeno una categoria e la città attuale compilata.
+  // Età, amico di e importanza hanno sempre un valore di default e non si possono distinguere
+  // da "lasciato così com'è", quindi non entrano nel controllo.
+  function isGuestComplete(g){
+    return !!(g.categorie && g.categorie.length>0 && (g.cittaAttuale||'').trim()!=='');
+  }
+
   const nomeLeiInput = document.getElementById('nomeLei');
   const nomeLuiInput = document.getElementById('nomeLui');
   nomeLeiInput.value = settings.nomeLei;
@@ -1007,6 +1032,67 @@ Marco e Sara (colleghi)"></textarea>
   const deleteBtn = document.getElementById('deleteBtn');
   let editingId = null;
   let formState = null;
+  let navContext = null; // {type:'lista'} | {type:'gruppo', groupId:string} | null — definisce l'elenco usato dalle freccette ‹ ›
+
+  function getNavIds(){
+    if(!navContext) return [];
+    if(navContext.type==='lista') return getFilteredSortedList().map(g=>g.id);
+    if(navContext.type==='gruppo'){
+      return guests.filter(g=>(g.groupId||'')===navContext.groupId).sort((a,b)=>(a.order||0)-(b.order||0)).map(g=>g.id);
+    }
+    return [];
+  }
+  function updateModalNavButtons(){
+    const prevBtn = document.getElementById('modalNavPrev');
+    const nextBtn = document.getElementById('modalNavNext');
+    if(!prevBtn || !nextBtn) return;
+    const ids = editingId && navContext ? getNavIds() : [];
+    const idx = editingId ? ids.indexOf(editingId) : -1;
+    const show = !!(editingId && navContext && ids.length>1 && idx!==-1);
+    prevBtn.classList.toggle('visible', show);
+    nextBtn.classList.toggle('visible', show);
+    if(show){
+      prevBtn.disabled = idx<=0;
+      nextBtn.disabled = idx>=ids.length-1;
+    }
+  }
+  function quickSaveCurrentGuest(){
+    if(!editingId || !formState) return;
+    const nome = document.getElementById('fNome').value.trim();
+    if(!nome) return; // non salvare se non c'è nome
+    const existingGuest = guests.find(g=>g.id===editingId);
+    if(!existingGuest) return;
+    
+    // aggiorna i dati del guest corrente dal form
+    existingGuest.nome = nome;
+    existingGuest.categorie = formState.categorie;
+    existingGuest.cittaAttuale = document.getElementById('fCittaAttuale').value.trim();
+    existingGuest.cittaConosciuti = document.getElementById('fCittaConosciuti').value.trim();
+    existingGuest.eta = formState.eta;
+    existingGuest.chi = formState.chi;
+    existingGuest.importanza = formState.importanza;
+    existingGuest.rsvp = formState.rsvp;
+    existingGuest.invitoInviato = formState.invitoInviato;
+    existingGuest.allergie = document.getElementById('fAllergie').value.trim();
+    existingGuest.note = document.getElementById('fNote').value.trim();
+    existingGuest.groupId = formState.groupId || '';
+    
+    saveGuests();
+  }
+  
+  function goToAdjacentGuest(delta){
+    if(!editingId || !navContext) return;
+    quickSaveCurrentGuest(); // salva il guest corrente prima di navigare
+    const ids = getNavIds();
+    const idx = ids.indexOf(editingId);
+    if(idx===-1) return;
+    const newIdx = idx + delta;
+    if(newIdx<0 || newIdx>=ids.length) return;
+    const nextGuest = guests.find(g=>g.id===ids[newIdx]);
+    if(nextGuest) openModal(nextGuest); // navContext resta invariato: si scorre nello stesso elenco
+  }
+  document.getElementById('modalNavPrev').addEventListener('click', (e)=>{ e.stopPropagation(); goToAdjacentGuest(-1); });
+  document.getElementById('modalNavNext').addEventListener('click', (e)=>{ e.stopPropagation(); goToAdjacentGuest(1); });
 
   function blankForm(presetGroupId){
     return {
@@ -1088,10 +1174,11 @@ Marco e Sara (colleghi)"></textarea>
     renderGroupSelect();
     syncRelationExclusivity();
     renderFormChips();
+    updateModalNavButtons();
     modalOverlay.classList.add('active');
   }
-  function closeModalFn(){ modalOverlay.classList.remove('active'); editingId=null; formState=null; }
-  fabAdd.addEventListener('click', ()=>{ openModal(null); });
+  function closeModalFn(){ modalOverlay.classList.remove('active'); editingId=null; formState=null; navContext=null; updateModalNavButtons(); }
+  fabAdd.addEventListener('click', ()=>{ navContext=null; openModal(null); });
   closeModal.addEventListener('click', closeModalFn);
   cancelBtn.addEventListener('click', closeModalFn);
   modalOverlay.addEventListener('click', (e)=>{ if(e.target===modalOverlay) closeModalFn(); });
@@ -1340,9 +1427,10 @@ Marco e Sara (colleghi)"></textarea>
     ].join('');
     const luogo = [g.cittaAttuale].filter(Boolean).join('');
     return `<div class="guest-card" style="border-left-color:${g.importanza>=3?'transparent':'var(--line)'}; ${g.importanza>=3?'border-image: var(--gradient) 1;':''}" data-id="${g.id}">
+      ${isGuestComplete(g) ? '<span class="completeness-dot" title="Campi principali completati"></span>' : ''}
       <div class="gc-top">
         <div>
-          <div class="gc-name">${g.nome}${plusLabel?`<span class="plus1">${plusLabel}</span>`:''}</div>
+          <div class="gc-name">${g.nome}${plusLabel ? `<span class="plus1">${plusLabel}</span>` : ''}</div>
           <div class="gc-meta">${luogo || 'città non indicata'}${g.allergie? ' · ⚠ '+g.allergie : ''}</div>
         </div>
         <div class="whoside ${g.chi}"></div>
@@ -1351,7 +1439,7 @@ Marco e Sara (colleghi)"></textarea>
     </div>`;
   }
 
-  function renderList(){
+  function getFilteredSortedList(){
     const q = searchInput.value.trim().toLowerCase();
     let list = guests.filter(g=>g.nome.toLowerCase().includes(q));
     if(listaCategorieFiltro.size>0){
@@ -1362,13 +1450,6 @@ Marco e Sara (colleghi)"></textarea>
       });
     }
     const sortMode = sortSelect.value;
-
-    if(list.length===0){
-      const filtroAttivo = q || listaCategorieFiltro.size>0;
-      guestListEl.innerHTML = `<div class="empty-state"><span class="emoji">${filtroAttivo?'🔍':'💌'}</span><h3>Nessun invitato ${filtroAttivo?'trovato':'ancora'}</h3><p>${filtroAttivo?'Prova un altro nome o azzera il filtro categorie nell\'indice a lato.':'Tocca + per aggiungere il primo, o importa da lista.'}</p></div>`;
-      return;
-    }
-
     if(sortMode==='nome') list.sort((a,b)=>a.nome.localeCompare(b.nome));
     else if(sortMode==='importanza') list.sort((a,b)=>b.importanza-a.importanza);
     else if(sortMode==='categoria') list.sort((a,b)=>(a.categorie[0]||'').localeCompare(b.categorie[0]||''));
@@ -1382,6 +1463,19 @@ Marco e Sara (colleghi)"></textarea>
       });
     }
     // sortMode==='default' && groups.length===0 -> lascia l'ordine naturale (aggiunta)
+    return list;
+  }
+
+  function renderList(){
+    const q = searchInput.value.trim().toLowerCase();
+    const list = getFilteredSortedList();
+    const sortMode = sortSelect.value;
+
+    if(list.length===0){
+      const filtroAttivo = q || listaCategorieFiltro.size>0;
+      guestListEl.innerHTML = `<div class="empty-state"><span class="emoji">${filtroAttivo?'🔍':'💌'}</span><h3>Nessun invitato ${filtroAttivo?'trovato':'ancora'}</h3><p>${filtroAttivo?'Prova un altro nome o azzera il filtro categorie nell\'indice a lato.':'Tocca + per aggiungere il primo, o importa da lista.'}</p></div>`;
+      return;
+    }
 
     let html = '';
     let lastHeader;
@@ -1400,6 +1494,7 @@ Marco e Sara (colleghi)"></textarea>
     guestListEl.querySelectorAll('.guest-card').forEach(card=>{
       card.addEventListener('click', ()=>{
         const g = guests.find(x=>x.id===card.dataset.id);
+        navContext = {type:'lista'};
         openModal(g);
       });
     });
@@ -1617,6 +1712,7 @@ Marco e Sara (colleghi)"></textarea>
       <label class="select-check"><input type="checkbox" class="row-select-cb" data-guest-id="${g.id}" ${checked}></label>
       <span class="drag-handle">⠿</span>
       <span class="drag-name">${g.nome}<span class="small">${plusSmall}</span></span>
+      ${isGuestComplete(g) ? '<span class="drag-completeness-dot" title="Campi principali completati"></span>' : ''}
       <button class="drag-edit-btn" data-guest-id="${g.id}" title="Modifica">✏️</button>
     </div>`;
   }
@@ -1700,7 +1796,15 @@ Marco e Sara (colleghi)"></textarea>
     });
     container.querySelectorAll('.drag-row').forEach(row=> setupDragForRow(row));
     container.querySelectorAll('.drag-edit-btn').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{ e.stopPropagation(); const g=guests.find(x=>x.id===btn.dataset.guestId); if(g) openModal(g); });
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const g=guests.find(x=>x.id===btn.dataset.guestId);
+        if(g){
+          const membersEl = btn.closest('.group-members');
+          navContext = {type:'gruppo', groupId: membersEl ? (membersEl.dataset.groupId||'') : ''};
+          openModal(g);
+        }
+      });
     });
     container.querySelectorAll('.group-block').forEach(block=> setupDragForGroupBlock(block));
     container.querySelectorAll('.group-name-input').forEach(inp=>{
@@ -1719,7 +1823,7 @@ Marco e Sara (colleghi)"></textarea>
       });
     });
     container.querySelectorAll('.group-add-btn').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{ e.stopPropagation(); openModal(null, btn.dataset.groupId); });
+      btn.addEventListener('click', (e)=>{ e.stopPropagation(); navContext=null; openModal(null, btn.dataset.groupId); });
     });
     container.querySelectorAll('.group-search-input').forEach(inp=>{
       const gid = inp.dataset.groupId;
