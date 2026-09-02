@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>I Nostri Invitati 💍</title>
+<title>I Nostri Invitati</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="apple-touch-icon" href="logo.png">
 <link rel="manifest" href="manifest.json">
@@ -74,7 +74,7 @@
     opacity:0.94;
   }
   .head-inner{position:relative; z-index:1; max-width:760px; margin:0 auto;}
-  .head-inner h1{font-size:28px; font-weight:600; color:var(--ink); letter-spacing:-0.02em;}
+  .head-inner h1{font-size:28px; font-weight:600; color:var(--paper); letter-spacing:-0.02em;}
   .head-inner p.sub{margin:6px 0 0; font-size:14px; color:var(--ink-soft); font-style:italic; font-family:'Fraunces',serif;}
   .names-row{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;}
   .name-chip{display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.8); backdrop-filter:blur(3px); border:1px solid var(--line); border-radius:100px; padding:6px 12px 6px 8px; box-shadow:0 2px 8px rgba(28,27,31,0.05); transition:box-shadow .15s var(--ease);}
@@ -421,7 +421,7 @@
 
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
-    <h1>I Nostri Invitati 💍</h1>
+    <h1>I Nostri Invitati</h1>
     <p class="sub">Accedi per vedere e modificare la lista da qualsiasi dispositivo.</p>
 
     <button class="btn-google" id="googleSignInBtn" type="button">
@@ -451,7 +451,7 @@
     <div class="brand">
      
       <div>
-        <h1>I Nostri Invitati 💍</h1>
+        <h1>I Nostri Invitati</h1>
         <p class="sub">our loved ones</p>
       </div>
     </div>
@@ -802,7 +802,7 @@ Marco e Sara (colleghi)"></textarea>
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
   const db = firebase.firestore();
-  const weddingDocRef = db.doc('matrimoni/principale');
+  let weddingDocRef = null; // ora dipende da chi è loggato, non è più fisso
   let unsubscribeSnapshot = null;
 
   const ETA_OPTIONS = [
@@ -882,7 +882,7 @@ Marco e Sara (colleghi)"></textarea>
   function uid(){ return 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
   function syncToFirestore(){
-    if(!auth.currentUser) return;
+    if(!auth.currentUser || !weddingDocRef) return;
     weddingDocRef.set({
       guests, categorie, settings, groups,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -908,7 +908,7 @@ Marco e Sara (colleghi)"></textarea>
   }
 
   function attachFirestoreSync(){
-    if(unsubscribeSnapshot) return;
+    if(unsubscribeSnapshot || !weddingDocRef) return;
     unsubscribeSnapshot = weddingDocRef.onSnapshot(snap=>{
       if(snap.metadata.hasPendingWrites) return;
       if(snap.exists){
@@ -961,14 +961,30 @@ Marco e Sara (colleghi)"></textarea>
 
   auth.onAuthStateChanged(user=>{
     if(user){
+      // Ogni account ha il proprio documento privato, isolato dagli altri
+      weddingDocRef = db.doc('matrimoni_utenti/' + user.uid);
       authOverlay.classList.add('hidden');
       document.getElementById('accountBar').style.display = 'flex';
       document.getElementById('accountEmail').textContent = user.email || user.displayName || '';
       attachFirestoreSync();
     } else {
+      weddingDocRef = null;
       authOverlay.classList.remove('hidden');
       document.getElementById('accountBar').style.display = 'none';
       detachFirestoreSync();
+      // Svuota i dati locali, altrimenti sullo stesso browser resterebbe
+      // visibile per un attimo la lista dell'utente precedente
+      guests = [];
+      categorie = DEFAULT_CATEGORIE.slice();
+      settings = {nomeLei:'Io', nomeLui:'Lui'};
+      groups = [];
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(CAT_KEY);
+      localStorage.removeItem(SETTINGS_KEY);
+      localStorage.removeItem(GROUPS_KEY);
+      nomeLeiInput.value = settings.nomeLei;
+      nomeLuiInput.value = settings.nomeLui;
+      renderAll();
     }
   });
 
@@ -2475,7 +2491,7 @@ Marco e Sara (colleghi)"></textarea>
   });
 
   const PRESETS = [
-    {label:'Amici miei 🩷', fn:()=>({...activeFilters, chi:['lei']})},
+    {label:'miei 🩷', fn:()=>({...activeFilters, chi:['lei']})},
     {label:'Amici suoi 🤍', fn:()=>({...activeFilters, chi:['lui']})},
     {label:'Amici comuni', fn:()=>({...activeFilters, chi:['entrambi']})},
     {label:'Top importanza + 1', fn:()=>({categorie:[],eta:[],citta:[],rsvp:[], chi:[], importanza:[4], plusOne:true})},
