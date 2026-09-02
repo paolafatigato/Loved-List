@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>I Nostri Invitati 💍</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --magenta:#EB1E8C;
+    --orange:#FF8A3D;
+    --yellow:#FFD23D;
+    --lilla:#B15FE8;
+    --ink:#1C1B1F;
+    --ink-soft:#57555C;
+    --paper:#FFFFFF;
+    --cream:#FFF9F3;
+    --line:#ECE4DC;
+    --line-soft:#F4EEE8;
+    --gradient: linear-gradient(120deg, var(--magenta) 0%, var(--orange) 42%, var(--yellow) 68%, var(--lilla) 100%);
+    --radius: 16px;
+    --shadow: 0 8px 24px rgba(28,27,31,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--cream);color:var(--ink);font-family:'Inter',sans-serif;}
+  h1,h2,h3{font-family:'Fraunces',serif;margin:0;}
+
+  header.app-head{
+    position:relative;
+    padding:34px 20px 26px;
+    background:var(--paper);
+    overflow:hidden;
+    border-bottom:1px solid var(--line);
+  }
+  header.app-head::before{
+    content:"";
+    position:absolute; inset:0;
+    background:var(--gradient);
+    clip-path: polygon(0 0, 62% 0, 38% 100%, 0% 100%);
+    opacity:0.94;
+  }
+  .head-inner{position:relative; z-index:1; max-width:760px; margin:0 auto;}
+  .head-inner h1{font-size:28px; font-weight:600; color:var(--ink); letter-spacing:-0.02em;}
+  .head-inner p.sub{margin:6px 0 0; font-size:14px; color:var(--ink-soft); font-style:italic; font-family:'Fraunces',serif;}
+  .names-row{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;}
+  .name-chip{display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.75); backdrop-filter:blur(3px); border:1px solid var(--line); border-radius:100px; padding:6px 12px 6px 8px;}
+  .name-chip input{border:none; background:transparent; font-family:'Inter'; font-size:13px; font-weight:600; color:var(--ink); width:74px; outline:none;}
+  .dot{width:14px; height:14px; border-radius:50%; flex-shrink:0;}
+  .dot.lei{background:var(--gradient);}
+  .dot.lui{background:var(--paper); border:1.5px solid var(--ink);}
+
+  nav.tabs{
+    position:sticky; top:0; z-index:20;
+    display:flex; gap:4px; background:var(--cream);
+    padding:10px 16px; border-bottom:1px solid var(--line);
+    max-width:760px; margin:0 auto; overflow-x:auto;
+  }
+  nav.tabs button{
+    border:none; background:transparent; padding:8px 14px; border-radius:100px;
+    font-family:'Inter'; font-weight:600; font-size:13.5px; color:var(--ink-soft);
+    cursor:pointer; white-space:nowrap; transition:.15s;
+  }
+  nav.tabs button.active{background:var(--ink); color:#fff;}
+
+  main{max-width:760px; margin:0 auto; padding:18px 16px 100px;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .toolbar{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center;}
+  .search-box{
+    flex:1; min-width:160px; display:flex; align-items:center; gap:8px;
+    background:var(--paper); border:1px solid var(--line); border-radius:100px; padding:9px 14px;
+  }
+  .search-box input{border:none; outline:none; width:100%; font-family:'Inter'; font-size:14px; background:transparent;}
+  select.sort-select{
+    border:1px solid var(--line); background:var(--paper); border-radius:100px; padding:9px 14px;
+    font-family:'Inter'; font-size:13px; color:var(--ink-soft); cursor:pointer;
+  }
+  .icon-btn{
+    border:1px solid var(--line); background:var(--paper); border-radius:100px; width:38px; height:38px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+  }
+
+  .summary-strip{display:flex; gap:10px; overflow-x:auto; margin-bottom:16px; padding-bottom:2px;}
+  .summary-card{
+    flex:0 0 auto; min-width:108px; background:var(--paper); border:1px solid var(--line);
+    border-radius:var(--radius); padding:12px 14px;
+  }
+  .summary-card .num{font-family:'Fraunces',serif; font-size:26px; font-weight:600; line-height:1;}
+  .summary-card .lbl{font-size:11.5px; color:var(--ink-soft); margin-top:4px; line-height:1.3;}
+
+  .list-group-header{font-family:'Fraunces',serif; font-size:14px; font-weight:600; color:var(--ink); margin:18px 0 8px; padding-left:2px;}
+  .list-group-header:first-child{margin-top:0;}
+
+  .guest-list{display:flex; flex-direction:column; gap:10px;}
+  .guest-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 14px 14px 16px; position:relative; cursor:pointer;
+    border-left:5px solid var(--line);
+    transition:.12s;
+  }
+  .guest-card:active{transform:scale(0.99);}
+  .gc-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .gc-name{font-family:'Fraunces',serif; font-size:17px; font-weight:600;}
+  .gc-name .plus1{font-family:'Inter'; font-size:11.5px; font-weight:700; color:var(--magenta); margin-left:6px;}
+  .gc-meta{font-size:12.5px; color:var(--ink-soft); margin-top:3px;}
+  .gc-tags{display:flex; flex-wrap:wrap; gap:6px; margin-top:9px;}
+  .tag{font-size:11px; font-weight:600; padding:4px 9px; border-radius:100px; background:var(--line-soft); color:var(--ink-soft);}
+  .tag.rsvp-confermato{background:#E6F4EA; color:#2A7A44;}
+  .tag.rsvp-rifiutato{background:#FBEAEA; color:#B23A3A;}
+  .tag.rsvp-attesa{background:#FFF3DA; color:#9A6B10;}
+  .tag.relation{background:#FCE4F3; color:var(--magenta);}
+  .whoside{width:16px; height:16px; border-radius:50%; flex-shrink:0; margin-top:3px;}
+  .whoside.lei{background:var(--gradient);}
+  .whoside.lui{background:#fff; border:1.5px solid var(--ink);}
+  .whoside.entrambi{background:linear-gradient(90deg, var(--magenta) 0%, var(--lilla) 50%, #fff 50%, #fff 100%); border:1.5px solid var(--ink);}
+
+  .empty-state{text-align:center; padding:60px 20px; color:var(--ink-soft);}
+  .empty-state h3{font-size:18px; margin-bottom:6px;}
+  .empty-state p{font-size:13.5px; margin:0;}
+
+  .fab{
+    position:fixed; bottom:22px; right:20px; width:58px; height:58px; border-radius:50%;
+    background:var(--gradient); border:none; box-shadow:var(--shadow); color:#fff; font-size:28px;
+    cursor:pointer; z-index:30; display:flex; align-items:center; justify-content:center;
+  }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(28,27,31,0.45); z-index:50; display:none;
+    align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.active{display:flex;}
+  .modal{
+    background:var(--cream); width:100%; max-width:760px; max-height:92vh; overflow-y:auto;
+    border-radius:20px 20px 0 0; padding:20px 18px 30px;
+  }
+  @media(min-width:640px){ .modal-overlay{align-items:center;} .modal{border-radius:20px; max-height:88vh;} }
+  .modal h2{font-size:20px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;}
+  .close-x{border:none; background:var(--line-soft); width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:15px; color:var(--ink-soft);}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:7px; text-transform:none;}
+  .field input[type=text], .field textarea, .field select{
+    width:100%; border:1px solid var(--line); background:var(--paper); border-radius:10px;
+    padding:10px 12px; font-family:'Inter'; font-size:14.5px; outline:none; color:var(--ink);
+  }
+  .field textarea{resize:vertical; min-height:56px;}
+  .two-col{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .chip-group{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip-option{
+    border:1.5px solid var(--line); background:var(--paper); border-radius:100px; padding:8px 13px;
+    font-size:13px; font-weight:600; cursor:pointer; color:var(--ink-soft); user-select:none;
+  }
+  .chip-option.selected{border-color:var(--ink); color:var(--ink); background:var(--line-soft);}
+  .chip-option.add-new{border-style:dashed; color:var(--magenta); border-color:var(--magenta);}
+  .who-group{display:flex; gap:8px;}
+  .who-option{
+    flex:1; border:1.5px solid var(--line); border-radius:12px; padding:10px 8px; text-align:center;
+    cursor:pointer; font-size:12.5px; font-weight:600; color:var(--ink-soft);
+  }
+  .who-option.selected{border-color:var(--ink); background:var(--line-soft); color:var(--ink);}
+  .who-option .dot{margin:0 auto 6px;}
+
+  .importance-track{display:flex; gap:5px;}
+  .imp-seg{flex:1; height:34px; border-radius:8px; border:1.5px solid var(--line); cursor:pointer; background:var(--paper);}
+  .imp-seg.filled-0{background:#F1EEEA;}
+  .imp-seg.filled-1{background:linear-gradient(120deg, var(--magenta), var(--orange)); opacity:.35; border-color:transparent;}
+  .imp-seg.filled-2{background:linear-gradient(120deg, var(--magenta), var(--orange)); opacity:.55; border-color:transparent;}
+  .imp-seg.filled-3{background:linear-gradient(120deg, var(--magenta), var(--orange), var(--yellow)); opacity:.78; border-color:transparent;}
+  .imp-seg.filled-4{background:var(--gradient); border-color:transparent;}
+  .imp-caption{font-size:12.5px; color:var(--ink-soft); margin-top:8px; font-style:italic; font-family:'Fraunces',serif;}
+
+  .toggle-row{display:flex; align-items:center; justify-content:space-between; padding:10px 0;}
+  .toggle-row label{font-size:14px; font-weight:600; color:var(--ink); margin:0;}
+  .switch{position:relative; width:42px; height:24px; flex-shrink:0;}
+  .switch input{opacity:0; width:0; height:0;}
+  .slider{position:absolute; inset:0; background:var(--line); border-radius:100px; cursor:pointer; transition:.15s;}
+  .slider::before{content:""; position:absolute; width:18px; height:18px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.15s; box-shadow:0 1px 3px rgba(0,0,0,.2);}
+  input:checked + .slider{background:var(--magenta);}
+  input:checked + .slider::before{transform:translateX(18px);}
+
+  .hint-text{font-size:12px; color:var(--ink-soft); margin-top:6px; font-style:italic;}
+
+  .modal-actions{display:flex; gap:10px; margin-top:18px;}
+  .btn{border:none; border-radius:100px; padding:13px 20px; font-family:'Inter'; font-weight:700; font-size:14.5px; cursor:pointer; flex:1;}
+  .btn-primary{background:var(--ink); color:#fff;}
+  .btn-danger{background:#FBEAEA; color:#B23A3A; flex:0 0 auto;}
+  .btn-ghost{background:var(--line-soft); color:var(--ink-soft);}
+
+  #groupEditModalOverlay .modal{border-top:5px solid var(--lilla);}
+  #groupEditModalOverlay #groupEditTitle{color:var(--lilla);}
+  #groupEditModalOverlay .btn-primary{background:var(--lilla);}
+  #groupEditModalOverlay .chip-option.selected{border-color:var(--lilla); color:var(--lilla); background:#F3E9FC;}
+  #groupEditModalOverlay .who-option.selected{border-color:var(--lilla); color:var(--lilla); background:#F3E9FC;}
+  #groupEditModalOverlay input:checked + .slider{background:var(--lilla);}
+
+  .suggest-wrap{position:relative;}
+  .suggest-box{
+    position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--paper);
+    border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); z-index:60;
+    max-height:170px; overflow-y:auto; display:none;
+  }
+  .suggest-box.active{display:block;}
+  .suggest-item{padding:9px 12px; font-size:13.5px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; color:var(--ink);}
+  .suggest-item:hover{background:var(--line-soft);}
+  .suggest-item .n{font-size:11px; color:var(--ink-soft);}
+
+  .bulk-textarea{width:100%; min-height:150px; border:1px solid var(--line); background:var(--paper); border-radius:10px; padding:12px; font-family:'Inter'; font-size:14px; resize:vertical;}
+  .bulk-preview{font-size:13px; color:var(--ink-soft); margin:10px 0 8px;}
+  .bulk-names{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;}
+  .bulk-name-chip{background:var(--line-soft); border-radius:100px; padding:5px 11px; font-size:12.5px; font-weight:600;}
+  .bulk-name-chip.dup{background:#FBEAEA; color:#B23A3A; text-decoration:line-through;}
+
+  .filter-block{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:14px;}
+  .filter-block h3{font-size:14px; margin-bottom:10px;}
+  .presets{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px;}
+  .preset-btn{
+    border:1.5px solid var(--line); background:var(--paper); border-radius:100px; padding:9px 14px;
+    font-size:12.5px; font-weight:600; color:var(--ink); cursor:pointer;
+  }
+  .count-result{
+    background:var(--gradient); border-radius:var(--radius); padding:26px 20px; text-align:center; margin-bottom:16px;
+  }
+  .count-result .big-num{font-family:'Fraunces',serif; font-size:56px; font-weight:600; color:#fff; line-height:1;}
+  .count-result .cap{color:rgba(255,255,255,0.9); font-size:13.5px; margin-top:4px; font-weight:600;}
+  .filter-reset{text-align:center; margin-bottom:16px;}
+  .filter-reset button{background:none; border:none; color:var(--ink-soft); font-size:12.5px; text-decoration:underline; cursor:pointer;}
+  .match-list{font-size:13px; color:var(--ink-soft); line-height:1.9;}
+
+  .cat-manage-row{display:flex; align-items:center; justify-content:space-between; background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:8px;}
+  .cat-manage-row span{font-weight:600; font-size:14px;}
+  .cat-manage-row .cat-count{font-size:12px; color:var(--ink-soft); margin-left:8px; font-weight:400;}
+  .cat-del{background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:16px;}
+  .add-cat-row{display:flex; gap:8px; margin-top:14px;}
+  .add-cat-row input{flex:1; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-family:'Inter'; font-size:14px;}
+  .add-cat-row button{border:none; background:var(--ink); color:#fff; border-radius:10px; padding:0 16px; font-weight:700; cursor:pointer;}
+
+  .backup-card{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:14px;}
+  .backup-card h3{font-size:15px; margin-bottom:6px;}
+  .backup-card p{font-size:13px; color:var(--ink-soft); line-height:1.6; margin:0 0 14px;}
+  .backup-actions{display:flex; gap:10px; flex-wrap:wrap;}
+  .backup-actions .btn{flex:0 0 auto;}
+  input[type=file]{display:none;}
+
+  .add-group-row{display:flex; gap:8px; margin-bottom:16px;}
+  .add-group-row input{flex:1; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-family:'Inter'; font-size:14px; background:var(--paper);}
+  .add-group-row button{border:none; background:var(--ink); color:#fff; border-radius:10px; padding:0 16px; font-weight:700; cursor:pointer;}
+  .group-block{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-bottom:14px;}
+  .group-header{display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;}
+  .group-name-input{flex:1; min-width:100px; border:none; background:transparent; font-family:'Fraunces',serif; font-size:16px; font-weight:600; color:var(--ink); padding:4px 2px; border-bottom:1px dashed transparent;}
+  .group-name-input:focus{border-bottom-color:var(--line); outline:none;}
+  .group-title-static{font-family:'Fraunces',serif; font-size:16px; font-weight:600; color:var(--ink);}
+  .group-count{font-size:11.5px; color:var(--ink-soft); white-space:nowrap;}
+  .group-actions{display:flex; gap:6px; margin-left:auto;}
+  .group-mini-btn{border:1px solid var(--line); background:var(--paper); border-radius:100px; width:30px; height:30px; font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .group-drag-handle{cursor:grab; color:var(--ink-soft); font-size:18px; padding:2px 6px; touch-action:none; flex-shrink:0; user-select:none;}
+.group-block.dragging-group{position:fixed; z-index:200; box-shadow:var(--shadow); opacity:.97;}
+.group-drag-placeholder{border:1.5px dashed var(--magenta); border-radius:var(--radius); background:#FCE4F3; opacity:.4;}
+.group-header{cursor:pointer;}
+.group-toolbar{display:none; gap:8px; margin-bottom:10px;}
+.group-block.expanded .group-toolbar{display:flex;}
+.group-toolbar .search-box{padding:7px 12px;}
+.group-toolbar .icon-btn{width:36px; height:36px; font-size:16px;}
+  .group-members{min-height:16px; display:flex; flex-direction:column; gap:6px;}
+  .drag-row{display:flex; align-items:center; gap:8px; background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:8px 10px; touch-action:none; user-select:none;}
+  .drag-row.dragging-row{position:fixed; z-index:200; box-shadow:var(--shadow); opacity:.97; background:var(--paper);}
+  .drag-handle{cursor:grab; color:var(--ink-soft); font-size:16px; padding:2px 6px; touch-action:none; flex-shrink:0;}
+  .drag-name{flex:1; font-size:13.5px; font-weight:600; color:var(--ink);}
+  .drag-name .small{font-weight:400; color:var(--magenta); font-size:11.5px; margin-left:4px;}
+  .drag-edit-btn{border:none; background:none; cursor:pointer; font-size:14px; color:var(--ink-soft); flex-shrink:0;}
+  .drag-placeholder{border:1.5px dashed var(--magenta); border-radius:10px; background:#FCE4F3; opacity:.5;}
+  .group-empty-hint{font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:6px 2px;}
+
+  @media print{
+    header, nav.tabs, .toolbar, .fab, .summary-strip, .modal-overlay{display:none !important;}
+    body{background:#fff;}
+    .guest-card{break-inside:avoid; border:1px solid #ccc;}
+  }
+</style>
+</head>
+<body>
+
+<header class="app-head">
+  <div class="head-inner">
+    <h1>I Nostri Invitati 💍</h1>
+    <p class="sub">our loved ones</p>
+    <div class="names-row">
+      <div class="name-chip"><span class="dot lei"></span><input id="nomeLei" type="text" value="Io" maxlength="16"></div>
+      <div class="name-chip"><span class="dot lui"></span><input id="nomeLui" type="text" value="Lui" maxlength="16"></div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-view="lista">Lista</button>
+  <button data-view="gruppi">Gruppi</button>
+  <button data-view="statistiche">Conta 🔢</button>
+  <button data-view="categorie">Categorie</button>
+  <button data-view="backup">Backup</button>
+</nav>
+
+<main>
+
+  <section class="view active" id="view-lista">
+    <div class="summary-strip" id="summaryStrip"></div>
+    <div class="toolbar">
+      <div class="search-box">🔍<input id="searchInput" type="text" placeholder="Cerca per nome..."></div>
+      <select class="sort-select" id="sortSelect">
+        <option value="default" selected>Ordine predefinito</option>
+        <option value="nome">Nome A-Z</option>
+        <option value="importanza">Più importanti prima</option>
+        <option value="categoria">Categoria</option>
+      </select>
+      <button class="icon-btn" id="bulkImportBtn" title="Importa da lista note">📋</button>
+      <button class="icon-btn" id="csvBtn" title="Esporta CSV">⇩</button>
+      <button class="icon-btn" id="printBtn" title="Stampa">🖨</button>
+    </div>
+    <div class="guest-list" id="guestList"></div>
+  </section>
+
+  <section class="view" id="view-gruppi">
+    <p class="hint-text" style="margin-bottom:14px;">Trascina le persone tra i gruppi tenendo premuto il loro ⠿. Trascina l'intero gruppo tenendo premuto il ⠿ nella sua intestazione per riordinare i gruppi. Finché non crei un gruppo, la Lista li mostra in ordine di aggiunta; da qui in poi li mostra nell'ordine dei gruppi.</p>
+    <div class="add-group-row">
+      <input id="newGroupInput" type="text" placeholder="Nome del nuovo gruppo (es. Tavolo 3)">
+      <button id="addGroupBtn">Crea gruppo</button>
+    </div>
+    <div id="groupsContainer"></div>
+  </section>
+
+  <section class="view" id="view-statistiche">
+    <div class="count-result">
+      <div class="big-num" id="countBig">0</div>
+      <div class="cap" id="countCap">persone in totale (invitati + +1)</div>
+    </div>
+    <div class="filter-reset"><button id="resetFilters">Azzera tutti i filtri</button></div>
+
+    <div class="presets" id="presetRow"></div>
+
+    <div class="filter-block">
+      <h3>Categoria</h3>
+      <div class="chip-group" id="filterCategorie"></div>
+    </div>
+    <div class="filter-block">
+      <h3>Amico di</h3>
+      <div class="chip-group" id="filterChi"></div>
+    </div>
+    <div class="filter-block">
+      <h3>Fascia d'età</h3>
+      <div class="chip-group" id="filterEta"></div>
+    </div>
+    <div class="filter-block">
+      <h3>Importanza</h3>
+      <div class="chip-group" id="filterImportanza"></div>
+    </div>
+    <div class="filter-block">
+      <h3>Città</h3>
+      <div class="chip-group" id="filterCitta"></div>
+    </div>
+    <div class="filter-block">
+      <h3>+1 e conferma</h3>
+      <div class="chip-group" id="filterExtra"></div>
+    </div>
+
+    <div class="filter-block">
+      <h3>Chi corrisponde (<span id="matchCount">0</span>)</h3>
+      <div class="match-list" id="matchList"></div>
+    </div>
+  </section>
+
+  <section class="view" id="view-categorie">
+    <div id="catList"></div>
+    <div class="add-cat-row">
+      <input id="newCatInput" type="text" placeholder="Nuova categoria (es. Amici del liceo)">
+      <button id="addCatBtn">Aggiungi</button>
+    </div>
+  </section>
+
+  <section class="view" id="view-backup">
+    <div class="backup-card">
+      <h3>I tuoi dati restano solo qui</h3>
+      <p>La lista è salvata nella memoria di questo browser (localStorage), non su un server. Se cambi computer o cancelli la cache la perdi — per questo conviene scaricare un backup ogni tanto, o dopo grandi aggiornamenti.</p>
+      <div class="backup-actions">
+        <button class="btn btn-primary" id="exportJsonBtn" style="flex:0 0 auto;">Scarica backup (.json)</button>
+        <button class="btn btn-ghost" id="importJsonTrigger" style="flex:0 0 auto;">Importa backup</button>
+        <input type="file" id="importJsonInput" accept="application/json">
+      </div>
+    </div>
+    <div class="backup-card">
+      <h3>Esporta per il catering / location</h3>
+      <p>Un CSV pulito con nome, categoria, età, +1, gruppo e allergie — pronto per chi organizza il ricevimento.</p>
+      <div class="backup-actions">
+        <button class="btn btn-primary" id="csvBtn2" style="flex:0 0 auto;">Scarica CSV</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<button class="fab" id="fabAdd">+</button>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2><span id="modalTitle">Nuovo invitato</span><button class="close-x" id="closeModal">✕</button></h2>
+
+    <div class="field">
+      <label>Nome</label>
+      <input type="text" id="fNome" placeholder="Nome e cognome">
+    </div>
+
+    <div class="field">
+      <label>Categorie</label>
+      <div class="chip-group" id="fCategorie"></div>
+    </div>
+
+    <div class="field two-col">
+      <div class="suggest-wrap">
+        <label>Città in cui abita ora</label>
+        <input type="text" id="fCittaAttuale" placeholder="es. Piacenza" autocomplete="off">
+        <div class="suggest-box" id="suggestCittaAttuale"></div>
+      </div>
+      <div class="suggest-wrap">
+        <label>Città in cui vi siete conosciuti</label>
+        <input type="text" id="fCittaConosciuti" placeholder="es. Padova" autocomplete="off">
+        <div class="suggest-box" id="suggestCittaConosciuti"></div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Fascia d'età</label>
+      <div class="chip-group" id="fEta"></div>
+    </div>
+
+    <div class="field">
+      <label>Amico/a di</label>
+      <div class="who-group" id="fChi"></div>
+    </div>
+
+    <div class="field">
+      <label>Quanto conta per voi</label>
+      <div class="importance-track" id="fImportanza"></div>
+      <div class="imp-caption" id="impCaption"></div>
+    </div>
+
+    <div class="field" id="relationField">
+      <label>Questo invitato è il +1 di...</label>
+      <select id="fIsPlusOneOf"><option value="">Nessuno — invitato indipendente</option></select>
+      <div class="hint-text">Usalo per dargli/le una scheda propria (importanza, allergie, note) pur restando il/la +1 di qualcuno già in lista.</div>
+    </div>
+
+    <div class="field" id="plusOneField">
+      <div class="toggle-row">
+        <label>Porta un +1</label>
+        <label class="switch"><input type="checkbox" id="fPlusOneToggle"><span class="slider"></span></label>
+      </div>
+      <div id="plusOneNameWrap" style="display:none;">
+        <div class="chip-group" style="margin-bottom:8px;">
+          <div class="chip-option selected" id="plusOneGeneric" data-mode="generico">Lascialo come "+1"</div>
+          <div class="chip-option" id="plusOneNamed" data-mode="nome">Metti il nome</div>
+        </div>
+        <input type="text" id="fPlusOneNome" placeholder="Nome del +1" style="display:none; width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-family:'Inter'; font-size:14.5px;">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Invito e conferma</label>
+      <div class="chip-group" id="fRsvp"></div>
+    </div>
+
+    <div class="field">
+      <div class="toggle-row">
+        <label>Invito già inviato</label>
+        <label class="switch"><input type="checkbox" id="fInvitoInviato"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Allergie / intolleranze alimentari</label>
+      <input type="text" id="fAllergie" placeholder="es. celiachia, vegetariano...">
+    </div>
+
+    <div class="field">
+      <label>Note</label>
+      <textarea id="fNote" placeholder="Qualsiasi altra cosa da ricordare..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="deleteBtn" style="display:none;">Elimina</button>
+      <button class="btn btn-ghost" id="cancelBtn">Annulla</button>
+      <button class="btn btn-primary" id="saveBtn">Salva</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="bulkModalOverlay">
+  <div class="modal">
+    <h2><span>Importa da lista note</span><button class="close-x" id="closeBulkModal">✕</button></h2>
+    <div class="field">
+      <label>Incolla qui la lista (un nome per riga, o separati da virgola)</label>
+      <textarea class="bulk-textarea" id="bulkTextarea" placeholder="Mario Rossi
+Giulia Bianchi
+Zia Anna
+Marco e Sara (colleghi)"></textarea>
+    </div>
+    <div class="bulk-preview" id="bulkPreview">Incolla o scrivi un nome per riga.</div>
+    <div class="bulk-names" id="bulkNamesPreview"></div>
+    <div class="hint-text">Vengono creati con i campi vuoti — apri ciascuno dopo per aggiungere categoria, città, importanza, ecc.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="bulkCancelBtn">Annulla</button>
+      <button class="btn btn-primary" id="bulkConfirmBtn">Aggiungi invitati</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="groupEditModalOverlay">
+  <div class="modal">
+    <h2><span id="groupEditTitle">Modifica gruppo</span><button class="close-x" id="closeGroupEditModal">✕</button></h2>
+    <p class="hint-text" style="margin-bottom:14px;">Spunta solo i campi che vuoi applicare a tutti i membri del gruppo. Gli altri restano come sono per ciascuno (nome, allergie, note e +1 sono sempre individuali).</p>
+    <div class="field">
+      <div class="toggle-row"><label>Categorie</label><label class="switch"><input type="checkbox" id="geApplyCategorie"><span class="slider"></span></label></div>
+      <div class="chip-group" id="geCategorie"></div>
+    </div>
+    <div class="field">
+      <div class="toggle-row"><label>Città (dove abita ora)</label><label class="switch"><input type="checkbox" id="geApplyCitta"><span class="slider"></span></label></div>
+      <div class="suggest-wrap">
+        <input type="text" id="geCitta" placeholder="es. Piacenza" autocomplete="off">
+        <div class="suggest-box" id="suggestGeCitta"></div>
+      </div>
+    </div>
+    <div class="field">
+      <div class="toggle-row"><label>Fascia d'età</label><label class="switch"><input type="checkbox" id="geApplyEta"><span class="slider"></span></label></div>
+      <div class="chip-group" id="geEta"></div>
+    </div>
+    <div class="field">
+      <div class="toggle-row"><label>Amico/a di</label><label class="switch"><input type="checkbox" id="geApplyChi"><span class="slider"></span></label></div>
+      <div class="who-group" id="geChi"></div>
+    </div>
+    <div class="field">
+      <div class="toggle-row"><label>Quanto conta per voi</label><label class="switch"><input type="checkbox" id="geApplyImportanza"><span class="slider"></span></label></div>
+      <div class="importance-track" id="geImportanza"></div>
+      <div class="imp-caption" id="geImpCaption"></div>
+    </div>
+    <div class="field">
+      <div class="toggle-row"><label>Invito e conferma</label><label class="switch"><input type="checkbox" id="geApplyRsvp"><span class="slider"></span></label></div>
+      <div class="chip-group" id="geRsvp"></div>
+    </div>
+    <div class="field">
+      <div class="toggle-row"><label>Invito già inviato</label><label class="switch"><input type="checkbox" id="geApplyInvito"><span class="slider"></span></label></div>
+      <div class="chip-group">
+        <div class="chip-option" id="geInvitoSi">Sì</div>
+        <div class="chip-option selected" id="geInvitoNo">No</div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="geCancelBtn">Annulla</button>
+      <button class="btn btn-primary" id="geSaveBtn">Applica al gruppo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const STORAGE_KEY = 'matrimonio-invitati-v1';
+  const CAT_KEY = 'matrimonio-categorie-v1';
+  const SETTINGS_KEY = 'matrimonio-settings-v1';
+  const GROUPS_KEY = 'matrimonio-gruppi-v1';
+
+  const ETA_OPTIONS = [
+    {id:'neonati', label:'Neonati'},
+    {id:'bambini', label:'Bambini'},
+    {id:'adolescenti', label:'Adolescenti'},
+    {id:'adulti-noi', label:'Adulti (età nostra)'},
+    {id:'adulti-genitori', label:'Adulti (età genitori)'}
+  ];
+  const IMPORTANZA_LABELS = [
+    'Costretto a invitarlo',
+    'Simpatico',
+    'Amico',
+    'Adoro',
+    'Se non viene cambio data'
+  ];
+  const RSVP_OPTIONS = [
+    {id:'attesa', label:'In attesa'},
+    {id:'confermato', label:'Confermato'},
+    {id:'rifiutato', label:'Non viene'}
+  ];
+  const DEFAULT_CATEGORIE = ['Famiglia','Palestra','Università','Lavoro','Vacanza'];
+
+  let guests = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  let categorie = JSON.parse(localStorage.getItem(CAT_KEY) || 'null') || DEFAULT_CATEGORIE.slice();
+  let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null') || {nomeLei:'Io', nomeLui:'Lui'};
+  let groups = JSON.parse(localStorage.getItem(GROUPS_KEY) || '[]');
+
+  function saveGuests(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(guests)); }
+  function saveCategorie(){ localStorage.setItem(CAT_KEY, JSON.stringify(categorie)); }
+  function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
+  function saveGroups(){ localStorage.setItem(GROUPS_KEY, JSON.stringify(groups)); }
+  function uid(){ return 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function isLinkedElsewhere(id){ return guests.some(g=>g.isPlusOneOf===id); }
+  function getLinkedPlusOne(id){ return guests.find(g=>g.isPlusOneOf===id); }
+
+  const nomeLeiInput = document.getElementById('nomeLei');
+  const nomeLuiInput = document.getElementById('nomeLui');
+  nomeLeiInput.value = settings.nomeLei;
+  nomeLuiInput.value = settings.nomeLui;
+  nomeLeiInput.addEventListener('change', ()=>{ settings.nomeLei = nomeLeiInput.value || 'Io'; saveSettings(); renderAll(); });
+  nomeLuiInput.addEventListener('change', ()=>{ settings.nomeLui = nomeLuiInput.value || 'Lui'; saveSettings(); renderAll(); });
+
+  function chiLabel(id){
+    if(id==='lei') return settings.nomeLei;
+    if(id==='lui') return settings.nomeLui;
+    return 'Entrambi';
+  }
+
+  document.querySelectorAll('nav.tabs button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      document.getElementById('view-'+btn.dataset.view).classList.add('active');
+      if(btn.dataset.view==='statistiche') renderStats();
+      if(btn.dataset.view==='categorie') renderCategorieTab();
+      if(btn.dataset.view==='gruppi') renderGruppiTab();
+    });
+  });
+
+  const modalOverlay = document.getElementById('modalOverlay');
+  const fabAdd = document.getElementById('fabAdd');
+  const closeModal = document.getElementById('closeModal');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const saveBtn = document.getElementById('saveBtn');
+  const deleteBtn = document.getElementById('deleteBtn');
+  let editingId = null;
+  let formState = null;
+
+  function blankForm(){
+    return {
+      categorie: [], eta: 'adulti-noi', chi: 'entrambi', importanza: 2,
+      plusOne: false, plusOneMode: 'generico', plusOneNome: '', isPlusOneOf: '',
+      rsvp: 'attesa', invitoInviato: false
+    };
+  }
+
+  function renderRelationSelect(){
+    const sel = document.getElementById('fIsPlusOneOf');
+    const options = guests.filter(g=> g.id!==editingId && !g.isPlusOneOf).sort((a,b)=>a.nome.localeCompare(b.nome));
+    sel.innerHTML = '<option value="">Nessuno — invitato indipendente</option>' + options.map(g=>`<option value="${g.id}">${g.nome}</option>`).join('');
+    sel.value = formState.isPlusOneOf || '';
+  }
+
+  function syncRelationExclusivity(){
+    document.getElementById('plusOneField').style.display = formState.isPlusOneOf ? 'none' : 'block';
+    document.getElementById('relationField').style.display = formState.plusOne ? 'none' : 'block';
+  }
+
+  function openModal(guest){
+    editingId = guest ? guest.id : null;
+    document.getElementById('modalTitle').textContent = guest ? 'Modifica invitato' : 'Nuovo invitato';
+    deleteBtn.style.display = guest ? 'block' : 'none';
+
+    if(guest){
+      formState = {
+        categorie: guest.categorie.slice(), eta: guest.eta, chi: guest.chi, importanza: guest.importanza,
+        plusOne: guest.plusOne, plusOneMode: guest.plusOneNome ? 'nome':'generico', plusOneNome: guest.plusOneNome || '',
+        isPlusOneOf: guest.isPlusOneOf || '',
+        rsvp: guest.rsvp, invitoInviato: guest.invitoInviato
+      };
+      document.getElementById('fNome').value = guest.nome;
+      document.getElementById('fCittaAttuale').value = guest.cittaAttuale || '';
+      document.getElementById('fCittaConosciuti').value = guest.cittaConosciuti || '';
+      document.getElementById('fAllergie').value = guest.allergie || '';
+      document.getElementById('fNote').value = guest.note || '';
+    } else {
+      formState = blankForm();
+      document.getElementById('fNome').value = '';
+      document.getElementById('fCittaAttuale').value = '';
+      document.getElementById('fCittaConosciuti').value = '';
+      document.getElementById('fAllergie').value = '';
+      document.getElementById('fNote').value = '';
+    }
+    document.getElementById('fPlusOneToggle').checked = formState.plusOne;
+    document.getElementById('plusOneNameWrap').style.display = formState.plusOne ? 'block':'none';
+    document.getElementById('fPlusOneNome').value = formState.plusOneNome;
+    document.getElementById('fPlusOneNome').style.display = formState.plusOneMode==='nome' ? 'block':'none';
+    document.getElementById('fInvitoInviato').checked = formState.invitoInviato;
+
+    renderRelationSelect();
+    syncRelationExclusivity();
+    renderFormChips();
+    modalOverlay.classList.add('active');
+  }
+  function closeModalFn(){ modalOverlay.classList.remove('active'); editingId=null; formState=null; pendingGroupId=null; }
+  fabAdd.addEventListener('click', ()=>{ pendingGroupId=null; openModal(null); });
+  closeModal.addEventListener('click', closeModalFn);
+  cancelBtn.addEventListener('click', closeModalFn);
+  modalOverlay.addEventListener('click', (e)=>{ if(e.target===modalOverlay) closeModalFn(); });
+
+  function renderFormChips(){
+    const fCat = document.getElementById('fCategorie');
+    fCat.innerHTML = '';
+    categorie.forEach(c=>{
+      const el = document.createElement('div');
+      el.className = 'chip-option' + (formState.categorie.includes(c)?' selected':'');
+      el.textContent = c;
+      el.addEventListener('click', ()=>{
+        const i = formState.categorie.indexOf(c);
+        if(i>-1) formState.categorie.splice(i,1); else formState.categorie.push(c);
+        renderFormChips();
+      });
+      fCat.appendChild(el);
+    });
+    const addEl = document.createElement('div');
+    addEl.className = 'chip-option add-new';
+    addEl.textContent = '+ nuova';
+    addEl.addEventListener('click', ()=>{
+      const name = prompt('Nome della nuova categoria:');
+      if(name && name.trim()){
+        categorie.push(name.trim());
+        saveCategorie();
+        formState.categorie.push(name.trim());
+        renderFormChips();
+      }
+    });
+    fCat.appendChild(addEl);
+
+    const fEta = document.getElementById('fEta');
+    fEta.innerHTML = '';
+    ETA_OPTIONS.forEach(o=>{
+      const el = document.createElement('div');
+      el.className = 'chip-option' + (formState.eta===o.id?' selected':'');
+      el.textContent = o.label;
+      el.addEventListener('click', ()=>{ formState.eta=o.id; renderFormChips(); });
+      fEta.appendChild(el);
+    });
+
+    const fChi = document.getElementById('fChi');
+    fChi.innerHTML = '';
+    [['lei',chiLabel('lei'),'lei'],['lui',chiLabel('lui'),'lui'],['entrambi','Entrambi','entrambi']].forEach(([id,label,dotClass])=>{
+      const el = document.createElement('div');
+      el.className = 'who-option' + (formState.chi===id?' selected':'');
+      el.innerHTML = '<div class="dot '+dotClass+'"></div>'+label;
+      el.addEventListener('click', ()=>{ formState.chi=id; renderFormChips(); });
+      fChi.appendChild(el);
+    });
+
+    const fImp = document.getElementById('fImportanza');
+    fImp.innerHTML = '';
+    for(let i=0;i<5;i++){
+      const el = document.createElement('div');
+      el.className = 'imp-seg' + (i<=formState.importanza ? ' filled-'+i : '');
+      el.addEventListener('click', ()=>{ formState.importanza=i; renderFormChips(); });
+      fImp.appendChild(el);
+    }
+    document.getElementById('impCaption').textContent = IMPORTANZA_LABELS[formState.importanza];
+
+    const fRsvp = document.getElementById('fRsvp');
+    fRsvp.innerHTML = '';
+    RSVP_OPTIONS.forEach(o=>{
+      const el = document.createElement('div');
+      el.className = 'chip-option' + (formState.rsvp===o.id?' selected':'');
+      el.textContent = o.label;
+      el.addEventListener('click', ()=>{ formState.rsvp=o.id; renderFormChips(); });
+      fRsvp.appendChild(el);
+    });
+  }
+
+  document.getElementById('fPlusOneToggle').addEventListener('change', (e)=>{
+    formState.plusOne = e.target.checked;
+    if(formState.plusOne) formState.isPlusOneOf='';
+    document.getElementById('plusOneNameWrap').style.display = formState.plusOne ? 'block':'none';
+    syncRelationExclusivity();
+  });
+  document.getElementById('plusOneGeneric').addEventListener('click', ()=>{
+    formState.plusOneMode='generico';
+    document.getElementById('plusOneGeneric').classList.add('selected');
+    document.getElementById('plusOneNamed').classList.remove('selected');
+    document.getElementById('fPlusOneNome').style.display='none';
+  });
+  document.getElementById('plusOneNamed').addEventListener('click', ()=>{
+    formState.plusOneMode='nome';
+    document.getElementById('plusOneNamed').classList.add('selected');
+    document.getElementById('plusOneGeneric').classList.remove('selected');
+    document.getElementById('fPlusOneNome').style.display='block';
+  });
+  document.getElementById('fInvitoInviato').addEventListener('change', e=>{ formState.invitoInviato = e.target.checked; });
+  document.getElementById('fIsPlusOneOf').addEventListener('change', (e)=>{
+    formState.isPlusOneOf = e.target.value;
+    if(formState.isPlusOneOf){
+      formState.plusOne = false;
+      document.getElementById('fPlusOneToggle').checked = false;
+      document.getElementById('plusOneNameWrap').style.display='none';
+    }
+    syncRelationExclusivity();
+  });
+
+  saveBtn.addEventListener('click', ()=>{
+    const nome = document.getElementById('fNome').value.trim();
+    if(!nome){ alert('Serve almeno un nome!'); return; }
+    const existingGuest = editingId ? guests.find(g=>g.id===editingId) : null;
+    const data = {
+      id: editingId || uid(),
+      nome,
+      categorie: formState.categorie,
+      cittaAttuale: document.getElementById('fCittaAttuale').value.trim(),
+      cittaConosciuti: document.getElementById('fCittaConosciuti').value.trim(),
+      eta: formState.eta,
+      chi: formState.chi,
+      importanza: formState.importanza,
+      plusOne: formState.isPlusOneOf ? false : formState.plusOne,
+      plusOneNome: (!formState.isPlusOneOf && formState.plusOne && formState.plusOneMode==='nome') ? document.getElementById('fPlusOneNome').value.trim() : '',
+      isPlusOneOf: formState.isPlusOneOf || '',
+      rsvp: formState.rsvp,
+      invitoInviato: formState.invitoInviato,
+      allergie: document.getElementById('fAllergie').value.trim(),
+      note: document.getElementById('fNote').value.trim(),
+      groupId: existingGuest ? (existingGuest.groupId || '') : (pendingGroupId || ''),
+      order: existingGuest ? (existingGuest.order || 0) : (pendingGroupId ? guests.filter(g=>g.groupId===pendingGroupId).length : guests.filter(g=>!g.groupId).length)
+    };
+    if(editingId){
+      const idx = guests.findIndex(g=>g.id===editingId);
+      guests[idx] = data;
+    } else {
+      guests.push(data);
+    }
+    saveGuests();
+    closeModalFn();
+    renderAll();
+    if(document.getElementById('view-gruppi').classList.contains('active')) renderGruppiTab();
+  });
+
+  deleteBtn.addEventListener('click', ()=>{
+    if(confirm('Eliminare questo invitato?')){
+      guests = guests.filter(g=>g.id!==editingId);
+      guests.forEach(g=>{ if(g.isPlusOneOf===editingId) g.isPlusOneOf=''; });
+      saveGuests();
+      closeModalFn();
+      renderAll();
+      if(document.getElementById('view-gruppi').classList.contains('active')) renderGruppiTab();
+    }
+  });
+
+  const guestListEl = document.getElementById('guestList');
+  const searchInput = document.getElementById('searchInput');
+  const sortSelect = document.getElementById('sortSelect');
+  searchInput.addEventListener('input', renderList);
+  sortSelect.addEventListener('change', renderList);
+
+  function personeTotali(list){
+    return list.reduce((acc,g)=>{
+      let n = 1;
+      if(g.plusOne && !isLinkedElsewhere(g.id)) n += 1;
+      return acc + n;
+    }, 0);
+  }
+
+  function renderSummary(){
+    const strip = document.getElementById('summaryStrip');
+    const totalePersone = personeTotali(guests);
+    const confermati = guests.filter(g=>g.rsvp==='confermato');
+    const attesa = guests.filter(g=>g.rsvp==='attesa');
+    const cards = [
+      [guests.length, 'invitati'],
+      [totalePersone, 'persone totali (con +1)'],
+      [personeTotali(confermati), 'confermati'],
+      [personeTotali(attesa), 'in attesa']
+    ];
+    strip.innerHTML = cards.map(([n,l])=>`<div class="summary-card"><div class="num">${n}</div><div class="lbl">${l}</div></div>`).join('');
+  }
+
+  function guestCardHtml(g){
+    const linked = getLinkedPlusOne(g.id);
+    const asPlusOfName = g.isPlusOneOf ? ((guests.find(x=>x.id===g.isPlusOneOf)||{}).nome || null) : null;
+    const plusLabel = linked ? ('+1: '+linked.nome) : (g.plusOne ? ('+1'+(g.plusOneNome?': '+g.plusOneNome:'')) : '');
+    const tags = [
+      ...g.categorie.map(c=>`<span class="tag">${c}</span>`),
+      `<span class="tag">${ETA_OPTIONS.find(e=>e.id===g.eta).label}</span>`,
+      `<span class="tag rsvp-${g.rsvp}">${RSVP_OPTIONS.find(r=>r.id===g.rsvp).label}</span>`,
+      asPlusOfName ? `<span class="tag relation">+1 di ${asPlusOfName}</span>` : ''
+    ].join('');
+    const luogo = [g.cittaAttuale].filter(Boolean).join('');
+    return `<div class="guest-card" style="border-left-color:${g.importanza>=3?'transparent':'var(--line)'}; ${g.importanza>=3?'border-image: var(--gradient) 1;':''}" data-id="${g.id}">
+      <div class="gc-top">
+        <div>
+          <div class="gc-name">${g.nome}${plusLabel?`<span class="plus1">${plusLabel}</span>`:''}</div>
+          <div class="gc-meta">${luogo || 'città non indicata'}${g.allergie? ' · ⚠ '+g.allergie : ''}</div>
+        </div>
+        <div class="whoside ${g.chi}"></div>
+      </div>
+      <div class="gc-tags">${tags}</div>
+    </div>`;
+  }
+
+  function renderList(){
+    const q = searchInput.value.trim().toLowerCase();
+    let list = guests.filter(g=>g.nome.toLowerCase().includes(q));
+    const sortMode = sortSelect.value;
+
+    if(list.length===0){
+      guestListEl.innerHTML = `<div class="empty-state"><h3>Nessun invitato ${q?'trovato':'ancora'}</h3><p>${q?'Prova un altro nome.':'Tocca + per aggiungere il primo, o importa da lista.'}</p></div>`;
+      return;
+    }
+
+    if(sortMode==='nome') list.sort((a,b)=>a.nome.localeCompare(b.nome));
+    else if(sortMode==='importanza') list.sort((a,b)=>b.importanza-a.importanza);
+    else if(sortMode==='categoria') list.sort((a,b)=>(a.categorie[0]||'').localeCompare(b.categorie[0]||''));
+    else if(groups.length>0){
+      const groupIndex = (g)=>{ if(!g.groupId) return groups.length; const i=groups.findIndex(x=>x.id===g.groupId); return i===-1? groups.length : i; };
+      list.sort((a,b)=>{
+        const gi = groupIndex(a)-groupIndex(b);
+        if(gi!==0) return gi;
+        return (a.order||0)-(b.order||0);
+      });
+    }
+    // sortMode==='default' && groups.length===0 -> lascia l'ordine naturale (aggiunta)
+
+    let html = '';
+    let lastHeader;
+    list.forEach(g=>{
+      if(sortMode==='default' && groups.length>0){
+        const gName = g.groupId ? ((groups.find(x=>x.id===g.groupId)||{}).nome || 'Gruppo') : 'Senza gruppo';
+        if(gName !== lastHeader){
+          html += `<div class="list-group-header">${gName}</div>`;
+          lastHeader = gName;
+        }
+      }
+      html += guestCardHtml(g);
+    });
+    guestListEl.innerHTML = html;
+
+    guestListEl.querySelectorAll('.guest-card').forEach(card=>{
+      card.addEventListener('click', ()=>{
+        const g = guests.find(x=>x.id===card.dataset.id);
+        openModal(g);
+      });
+    });
+  }
+
+  function exportCsv(){
+    const rows = [['Nome','+1','Relazione','Gruppo','Categorie','Città','Età','Amico di','Importanza','RSVP','Allergie','Note']];
+    guests.forEach(g=>{
+      const linked = getLinkedPlusOne(g.id);
+      const plusVal = linked ? linked.nome : (g.plusOne ? (g.plusOneNome||'+1') : '');
+      const relVal = g.isPlusOneOf ? ('+1 di '+((guests.find(x=>x.id===g.isPlusOneOf)||{}).nome||'')) : '';
+      const gruppoVal = g.groupId ? ((groups.find(x=>x.id===g.groupId)||{}).nome || '') : 'Senza gruppo';
+      rows.push([
+        g.nome,
+        plusVal,
+        relVal,
+        gruppoVal,
+        g.categorie.join('; '),
+        g.cittaAttuale,
+        ETA_OPTIONS.find(e=>e.id===g.eta).label,
+        chiLabel(g.chi),
+        IMPORTANZA_LABELS[g.importanza],
+        RSVP_OPTIONS.find(r=>r.id===g.rsvp).label,
+        g.allergie,
+        g.note
+      ]);
+    });
+    const csv = rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'invitati-matrimonio.csv';
+    a.click();
+  }
+  document.getElementById('csvBtn').addEventListener('click', exportCsv);
+  document.getElementById('csvBtn2').addEventListener('click', exportCsv);
+  document.getElementById('printBtn').addEventListener('click', ()=>window.print());
+
+  document.getElementById('exportJsonBtn').addEventListener('click', ()=>{
+    const payload = {guests, categorie, settings, groups, exportedAt:new Date().toISOString()};
+    const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'backup-invitati-matrimonio.json';
+    a.click();
+  });
+  const importInput = document.getElementById('importJsonInput');
+  document.getElementById('importJsonTrigger').addEventListener('click', ()=>importInput.click());
+  importInput.addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const data = JSON.parse(reader.result);
+        if(!confirm('Importare questo backup? Sostituirà i dati attuali in questo browser.')) return;
+        guests = data.guests || [];
+        categorie = data.categorie || DEFAULT_CATEGORIE.slice();
+        settings = data.settings || {nomeLei:'Io', nomeLui:'Lui'};
+        groups = data.groups || [];
+        saveGuests(); saveCategorie(); saveSettings(); saveGroups();
+        nomeLeiInput.value = settings.nomeLei;
+        nomeLuiInput.value = settings.nomeLui;
+        renderAll();
+        alert('Backup importato!');
+      }catch(err){ alert('File non valido.'); }
+    };
+    reader.readAsText(file);
+  });
+
+  function renderCategorieTab(){
+    const catList = document.getElementById('catList');
+    catList.innerHTML = categorie.map(c=>{
+      const count = guests.filter(g=>g.categorie.includes(c)).length;
+      return `<div class="cat-manage-row"><span>${c}<span class="cat-count">${count} invitati</span></span><button class="cat-del" data-cat="${c}">🗑</button></div>`;
+    }).join('');
+    catList.querySelectorAll('.cat-del').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const c = btn.dataset.cat;
+        if(confirm(`Eliminare la categoria "${c}"? Verrà rimossa anche dagli invitati che la usano.`)){
+          categorie = categorie.filter(x=>x!==c);
+          guests.forEach(g=>{ g.categorie = g.categorie.filter(x=>x!==c); });
+          saveCategorie(); saveGuests();
+          renderCategorieTab(); renderAll();
+        }
+      });
+    });
+  }
+  document.getElementById('addCatBtn').addEventListener('click', ()=>{
+    const input = document.getElementById('newCatInput');
+    const val = input.value.trim();
+    if(val && !categorie.includes(val)){
+      categorie.push(val);
+      saveCategorie();
+      input.value='';
+      renderCategorieTab();
+    }
+  });
+
+  /* ---------------- GRUPPI ---------------- */
+  let expandedGroupId = null;
+  let pendingGroupId = null;
+
+  function assignGuestToGroup(guestId, groupId){
+    const g = guests.find(x=>x.id===guestId);
+    if(!g) return;
+    g.groupId = groupId;
+    g.order = guests.filter(x=>x.groupId===groupId && x.id!==guestId).length;
+    saveGuests();
+    renderGruppiTab();
+    renderAll();
+  }
+
+  document.getElementById('addGroupBtn').addEventListener('click', ()=>{
+    const input = document.getElementById('newGroupInput');
+    const val = input.value.trim();
+    if(val){
+      groups.push({id:uid(), nome:val});
+      saveGroups();
+      input.value='';
+      renderGruppiTab();
+      renderAll();
+    }
+  });
+
+  function dragRowHtml(g){
+    const linked = getLinkedPlusOne(g.id);
+    const plusSmall = linked ? (' +1: '+linked.nome) : (g.plusOne ? (' +1'+(g.plusOneNome?': '+g.plusOneNome:'')) : '');
+    return `<div class="drag-row" data-guest-id="${g.id}">
+      <span class="drag-handle">⠿</span>
+      <span class="drag-name">${g.nome}<span class="small">${plusSmall}</span></span>
+      <button class="drag-edit-btn" data-guest-id="${g.id}" title="Modifica">✏️</button>
+    </div>`;
+  }
+
+  function renderGruppiTab(){
+    const container = document.getElementById('groupsContainer');
+    let html = '';
+    groups.forEach(gr=>{
+      const members = guests.filter(g=>g.groupId===gr.id).sort((a,b)=>(a.order||0)-(b.order||0));
+      const isExpanded = gr.id === expandedGroupId;
+      html += `
+      <div class="group-block${isExpanded?' expanded':''}" data-group-id="${gr.id}">
+        <div class="group-header">
+            <span class="group-drag-handle" title="Trascina per riordinare i gruppi">⠿</span>
+          <input class="group-name-input" value="${gr.nome}" data-group-id="${gr.id}">
+          <span class="group-count">${members.length} person${members.length===1?'a':'e'}</span>
+          <div class="group-actions">
+            <button class="group-mini-btn ge-edit" data-group-id="${gr.id}" title="Modifica gruppo">✏️</button>
+            <button class="group-mini-btn ge-del" data-group-id="${gr.id}" title="Elimina gruppo">🗑</button>
+          </div>
+        </div>
+        <div class="group-toolbar">
+          <div class="suggest-wrap" style="flex:1;">
+            <div class="search-box">🔍<input class="group-search-input" type="text" placeholder="Cerca un invitato esistente..." data-group-id="${gr.id}" autocomplete="off"></div>
+            <div class="suggest-box" data-group-id="${gr.id}"></div>
+          </div>
+          <button class="icon-btn group-add-btn" data-group-id="${gr.id}" title="Aggiungi nuovo invitato qui">+</button>
+        </div>
+        <div class="group-members" data-group-id="${gr.id}">
+          ${members.length ? members.map(g=>dragRowHtml(g)).join('') : '<div class="group-empty-hint">Trascina qui un invitato per aggiungerlo.</div>'}
+        </div>
+      </div>`;
+    });
+    const ungrouped = guests.filter(g=>!g.groupId).sort((a,b)=>(a.order||0)-(b.order||0));
+    html += `
+    <div class="group-block" data-group-id="">
+      <div class="group-header">
+        <span class="group-title-static">Senza gruppo</span>
+        <span class="group-count">${ungrouped.length} person${ungrouped.length===1?'a':'e'}</span>
+      </div>
+      <div class="group-members" data-group-id="">
+        ${ungrouped.length ? ungrouped.map(g=>dragRowHtml(g)).join('') : '<div class="group-empty-hint">Nessuno qui, ottimo.</div>'}
+      </div>
+    </div>`;
+    container.innerHTML = html;
+
+    container.querySelectorAll('.drag-row').forEach(row=> setupDragForRow(row));
+    container.querySelectorAll('.group-block').forEach(block=> setupDragForGroupBlock(block));
+    container.querySelectorAll('.drag-edit-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{ e.stopPropagation(); const g=guests.find(x=>x.id===btn.dataset.guestId); if(g) openModal(g); });
+    });
+    container.querySelectorAll('.group-name-input').forEach(inp=>{
+      inp.addEventListener('change', ()=>{
+        const gr = groups.find(x=>x.id===inp.dataset.groupId);
+        if(gr){ gr.nome = inp.value.trim() || gr.nome; saveGroups(); renderGruppiTab(); renderAll(); }
+      });
+    });
+    container.querySelectorAll('.group-block[data-group-id]').forEach(block=>{
+      const gid = block.dataset.groupId;
+      if(!gid) return;
+      const header = block.querySelector('.group-header');
+      header.addEventListener('click', (e)=>{
+        if(e.target.closest('input, button, .group-drag-handle')) return;
+        expandedGroupId = (expandedGroupId===gid) ? null : gid;
+        renderGruppiTab();
+      });
+    });
+    container.querySelectorAll('.group-search-input').forEach(inp=>{
+      const gid = inp.dataset.groupId;
+      const box = container.querySelector(`.suggest-box[data-group-id="${gid}"]`);
+      function showResults(){
+        const q = inp.value.trim().toLowerCase();
+        if(!q){ box.classList.remove('active'); box.innerHTML=''; return; }
+        const matches = guests.filter(g=>g.nome.toLowerCase().includes(q)).slice(0,8);
+        if(!matches.length){
+          box.innerHTML = '<div class="suggest-item" style="cursor:default;color:var(--ink-soft);">Nessun risultato</div>';
+          box.classList.add('active');
+          return;
+        }
+        box.innerHTML = matches.map(g=>{
+          const already = g.groupId===gid;
+          const posizione = already ? 'già qui' : (g.groupId ? ((groups.find(x=>x.id===g.groupId)||{}).nome||'') : 'Senza gruppo');
+          return `<div class="suggest-item" data-guest-id="${g.id}" style="${already?'opacity:.5;':''}">${g.nome}<span class="n">${posizione}</span></div>`;
+        }).join('');
+        box.classList.add('active');
+        box.querySelectorAll('.suggest-item[data-guest-id]').forEach(item=>{
+          item.addEventListener('mousedown', (e)=>{
+            e.preventDefault();
+            assignGuestToGroup(item.dataset.guestId, gid);
+          });
+        });
+      }
+      inp.addEventListener('click', e=>e.stopPropagation());
+      inp.addEventListener('input', showResults);
+      inp.addEventListener('focus', showResults);
+      inp.addEventListener('blur', ()=> setTimeout(()=>box.classList.remove('active'), 150));
+    });
+    container.querySelectorAll('.ge-edit').forEach(btn=> btn.addEventListener('click', ()=>openGroupEditModal(btn.dataset.groupId)));
+    container.querySelectorAll('.ge-del').forEach(btn=> btn.addEventListener('click', ()=>deleteGroup(btn.dataset.groupId)));
+  }
+
+  function deleteGroup(gid){
+    const gr = groups.find(x=>x.id===gid);
+    if(!gr) return;
+    if(!confirm(`Eliminare il gruppo "${gr.nome}"? I suoi membri torneranno "senza gruppo".`)) return;
+    const freed = guests.filter(g=>g.groupId===gid).sort((a,b)=>(a.order||0)-(b.order||0));
+    const existingUngrouped = guests.filter(g=>!g.groupId).sort((a,b)=>(a.order||0)-(b.order||0));
+    [...existingUngrouped, ...freed].forEach((g,idx)=>{ g.groupId=''; g.order=idx; });
+    groups = groups.filter(x=>x.id!==gid);
+    saveGroups(); saveGuests();
+    renderGruppiTab(); renderAll();
+  }
+
+  function syncOrderFromDom(){
+    document.querySelectorAll('#groupsContainer .group-members').forEach(container=>{
+      const gid = container.dataset.groupId || '';
+      Array.from(container.querySelectorAll('.drag-row')).forEach((row,idx)=>{
+        const g = guests.find(x=>x.id===row.dataset.guestId);
+        if(g){ g.groupId = gid; g.order = idx; }
+      });
+    });
+    saveGuests();
+    renderGruppiTab();
+    renderAll();
+  }
+
+  function setupDragForRow(row){
+    const handle = row.querySelector('.drag-handle');
+    handle.addEventListener('pointerdown', (e)=>{
+      if(e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      const rect = row.getBoundingClientRect();
+      const offsetY = e.clientY - rect.top;
+      const placeholder = document.createElement('div');
+      placeholder.className = 'drag-placeholder';
+      placeholder.style.height = rect.height+'px';
+      row.parentNode.insertBefore(placeholder, row);
+      row.classList.add('dragging-row');
+      row.style.width = rect.width+'px';
+      row.style.left = rect.left+'px';
+      row.style.top = rect.top+'px';
+      document.body.appendChild(row);
+      try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+
+      function onMove(ev){
+        row.style.top = (ev.clientY - offsetY)+'px';
+        row.style.pointerEvents = 'none';
+        const elBelow = document.elementFromPoint(ev.clientX, ev.clientY);
+        row.style.pointerEvents = '';
+        if(!elBelow) return;
+        const targetRow = elBelow.closest('.drag-row');
+        const targetContainer = elBelow.closest('.group-members');
+        if(targetRow && targetRow!==row && targetRow.parentNode){
+          const tRect = targetRow.getBoundingClientRect();
+          const before = ev.clientY < tRect.top + tRect.height/2;
+          targetRow.parentNode.insertBefore(placeholder, before ? targetRow : targetRow.nextSibling);
+        } else if(targetContainer && !targetRow){
+          targetContainer.appendChild(placeholder);
+        }
+      }
+      function onUp(ev){
+        try{ handle.releasePointerCapture(ev.pointerId); }catch(err){}
+        handle.removeEventListener('pointermove', onMove);
+        handle.removeEventListener('pointerup', onUp);
+        row.classList.remove('dragging-row');
+        row.style.position=''; row.style.left=''; row.style.top=''; row.style.width=''; row.style.pointerEvents='';
+        if(placeholder.parentNode){ placeholder.parentNode.insertBefore(row, placeholder); placeholder.remove(); }
+        syncOrderFromDom();
+      }
+      handle.addEventListener('pointermove', onMove);
+      handle.addEventListener('pointerup', onUp);
+    });
+  }
+
+  function syncGroupOrderFromDom(){
+  const container = document.getElementById('groupsContainer');
+  const orderedIds = Array.from(container.querySelectorAll('.group-block'))
+    .map(b=>b.dataset.groupId)
+    .filter(id=>id!=='');
+  groups.sort((a,b)=> orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id));
+  saveGroups();
+  renderGruppiTab();
+  renderAll();
+}
+
+function setupDragForGroupBlock(block){
+  const handle = block.querySelector('.group-drag-handle');
+  if(!handle) return;
+  handle.addEventListener('pointerdown', (e)=>{
+    if(e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    const container = document.getElementById('groupsContainer');
+    const rect = block.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    const placeholder = document.createElement('div');
+    placeholder.className = 'group-drag-placeholder';
+    placeholder.style.height = rect.height+'px';
+    container.insertBefore(placeholder, block);
+    block.classList.add('dragging-group');
+    block.style.width = rect.width+'px';
+    block.style.left = rect.left+'px';
+    block.style.top = rect.top+'px';
+    document.body.appendChild(block);
+    try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+
+    function onMove(ev){
+      block.style.top = (ev.clientY - offsetY)+'px';
+      block.style.pointerEvents = 'none';
+      const elBelow = document.elementFromPoint(ev.clientX, ev.clientY);
+      block.style.pointerEvents = '';
+      if(!elBelow) return;
+      const targetBlock = elBelow.closest('.group-block');
+      if(targetBlock && targetBlock!==block && targetBlock.parentNode===container){
+        if(targetBlock.dataset.groupId===''){
+          container.insertBefore(placeholder, targetBlock);
+        } else {
+          const tRect = targetBlock.getBoundingClientRect();
+          const before = ev.clientY < tRect.top + tRect.height/2;
+          container.insertBefore(placeholder, before ? targetBlock : targetBlock.nextSibling);
+        }
+      }
+    }
+    function onUp(ev){
+      try{ handle.releasePointerCapture(ev.pointerId); }catch(err){}
+      handle.removeEventListener('pointermove', onMove);
+      handle.removeEventListener('pointerup', onUp);
+      block.classList.remove('dragging-group');
+      block.style.position=''; block.style.left=''; block.style.top=''; block.style.width=''; block.style.pointerEvents='';
+      if(placeholder.parentNode){ placeholder.parentNode.insertBefore(block, placeholder); placeholder.remove(); }
+      syncGroupOrderFromDom();
+    }
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+  });
+}
+  /* ---------------- MODIFICA GRUPPO (bulk edit) ---------------- */
+  const groupEditModalOverlay = document.getElementById('groupEditModalOverlay');
+  let currentGroupEditId = null;
+  let geState = null;
+
+  function openGroupEditModal(gid){
+    const gr = groups.find(x=>x.id===gid);
+    if(!gr) return;
+    currentGroupEditId = gid;
+    document.getElementById('groupEditTitle').textContent = 'Modifica gruppo: ' + gr.nome;
+    geState = {categorie:[], citta:'', eta:'adulti-noi', chi:'entrambi', importanza:2, rsvp:'attesa', invitoInviato:false};
+    ['geApplyCategorie','geApplyCitta','geApplyEta','geApplyChi','geApplyImportanza','geApplyRsvp','geApplyInvito'].forEach(id=>{
+      document.getElementById(id).checked = false;
+    });
+    document.getElementById('geCitta').value = '';
+    document.getElementById('geInvitoSi').classList.remove('selected');
+    document.getElementById('geInvitoNo').classList.add('selected');
+    renderGroupEditChips();
+    groupEditModalOverlay.classList.add('active');
+  }
+  document.getElementById('closeGroupEditModal').addEventListener('click', ()=>groupEditModalOverlay.classList.remove('active'));
+  document.getElementById('geCancelBtn').addEventListener('click', ()=>groupEditModalOverlay.classList.remove('active'));
+  groupEditModalOverlay.addEventListener('click', e=>{ if(e.target===groupEditModalOverlay) groupEditModalOverlay.classList.remove('active'); });
+
+  function renderGroupEditChips(){
+    const geCat = document.getElementById('geCategorie');
+    geCat.innerHTML = categorie.map(c=>`<div class="chip-option ${geState.categorie.includes(c)?'selected':''}" data-c="${c}">${c}</div>`).join('');
+    geCat.querySelectorAll('.chip-option').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const c = el.dataset.c;
+        const i = geState.categorie.indexOf(c);
+        if(i>-1) geState.categorie.splice(i,1); else geState.categorie.push(c);
+        document.getElementById('geApplyCategorie').checked = true;
+        renderGroupEditChips();
+      });
+    });
+
+    const geEta = document.getElementById('geEta');
+    geEta.innerHTML = ETA_OPTIONS.map(o=>`<div class="chip-option ${geState.eta===o.id?'selected':''}" data-v="${o.id}">${o.label}</div>`).join('');
+    geEta.querySelectorAll('.chip-option').forEach(el=>{
+      el.addEventListener('click', ()=>{ geState.eta = el.dataset.v; document.getElementById('geApplyEta').checked = true; renderGroupEditChips(); });
+    });
+
+    const geChi = document.getElementById('geChi');
+    geChi.innerHTML = '';
+    [['lei',chiLabel('lei'),'lei'],['lui',chiLabel('lui'),'lui'],['entrambi','Entrambi','entrambi']].forEach(([id,label,dotClass])=>{
+      const el = document.createElement('div');
+      el.className = 'who-option' + (geState.chi===id?' selected':'');
+      el.innerHTML = '<div class="dot '+dotClass+'"></div>'+label;
+      el.addEventListener('click', ()=>{ geState.chi=id; document.getElementById('geApplyChi').checked = true; renderGroupEditChips(); });
+      geChi.appendChild(el);
+    });
+
+    const geImp = document.getElementById('geImportanza');
+    geImp.innerHTML = '';
+    for(let i=0;i<5;i++){
+      const el = document.createElement('div');
+      el.className = 'imp-seg' + (i<=geState.importanza ? ' filled-'+i : '');
+      el.addEventListener('click', ()=>{ geState.importanza=i; document.getElementById('geApplyImportanza').checked = true; renderGroupEditChips(); });
+      geImp.appendChild(el);
+    }
+    document.getElementById('geImpCaption').textContent = IMPORTANZA_LABELS[geState.importanza];
+
+    const geRsvp = document.getElementById('geRsvp');
+    geRsvp.innerHTML = RSVP_OPTIONS.map(o=>`<div class="chip-option ${geState.rsvp===o.id?'selected':''}" data-v="${o.id}">${o.label}</div>`).join('');
+    geRsvp.querySelectorAll('.chip-option').forEach(el=>{
+      el.addEventListener('click', ()=>{ geState.rsvp = el.dataset.v; document.getElementById('geApplyRsvp').checked = true; renderGroupEditChips(); });
+    });
+  }
+  document.getElementById('geCitta').addEventListener('input', ()=>{
+    geState.citta = document.getElementById('geCitta').value;
+    document.getElementById('geApplyCitta').checked = true;
+  });
+
+  document.getElementById('geInvitoSi').addEventListener('click', ()=>{
+    geState.invitoInviato = true;
+    document.getElementById('geInvitoSi').classList.add('selected');
+    document.getElementById('geInvitoNo').classList.remove('selected');
+    document.getElementById('geApplyInvito').checked = true;
+  });
+  document.getElementById('geInvitoNo').addEventListener('click', ()=>{
+    geState.invitoInviato = false;
+    document.getElementById('geInvitoNo').classList.add('selected');
+    document.getElementById('geInvitoSi').classList.remove('selected');
+    document.getElementById('geApplyInvito').checked = true;
+  });
+
+  document.getElementById('geSaveBtn').addEventListener('click', ()=>{
+    const members = guests.filter(g=>g.groupId===currentGroupEditId);
+    const applyCategorie = document.getElementById('geApplyCategorie').checked;
+    const applyCitta = document.getElementById('geApplyCitta').checked;
+    const applyEta = document.getElementById('geApplyEta').checked;
+    const applyChi = document.getElementById('geApplyChi').checked;
+    const applyImportanza = document.getElementById('geApplyImportanza').checked;
+    const applyRsvp = document.getElementById('geApplyRsvp').checked;
+    const applyInvito = document.getElementById('geApplyInvito').checked;
+    members.forEach(g=>{
+      if(applyCategorie) g.categorie = geState.categorie.slice();
+      if(applyCitta) g.cittaAttuale = geState.citta;
+      if(applyEta) g.eta = geState.eta;
+      if(applyChi) g.chi = geState.chi;
+      if(applyImportanza) g.importanza = geState.importanza;
+      if(applyRsvp) g.rsvp = geState.rsvp;
+      if(applyInvito) g.invitoInviato = geState.invitoInviato;
+    });
+    saveGuests();
+    groupEditModalOverlay.classList.remove('active');
+    renderGruppiTab();
+    renderAll();
+  });
+
+  /* ---------------- STATISTICHE / FILTRI ---------------- */
+  let activeFilters = {categorie:[], chi:[], eta:[], importanza:[], citta:[], plusOne:null, rsvp:[]};
+
+  function toggleFilter(group, value){
+    const arr = activeFilters[group];
+    const i = arr.indexOf(value);
+    if(i>-1) arr.splice(i,1); else arr.push(value);
+    renderStats();
+  }
+
+  function matchesFilters(g){
+    if(activeFilters.categorie.length && !g.categorie.some(c=>activeFilters.categorie.includes(c))) return false;
+    if(activeFilters.chi.length && !activeFilters.chi.includes(g.chi)) return false;
+    if(activeFilters.eta.length && !activeFilters.eta.includes(g.eta)) return false;
+    if(activeFilters.importanza.length && !activeFilters.importanza.includes(g.importanza)) return false;
+    if(activeFilters.citta.length && !activeFilters.citta.includes(g.cittaAttuale)) return false;
+    if(activeFilters.rsvp.length && !activeFilters.rsvp.includes(g.rsvp)) return false;
+    if(activeFilters.plusOne===true && !g.plusOne) return false;
+    if(activeFilters.plusOne===false && g.plusOne) return false;
+    return true;
+  }
+
+  function renderStats(){
+    const matched = guests.filter(matchesFilters);
+    const totalePersone = personeTotali(matched);
+    document.getElementById('countBig').textContent = totalePersone;
+    document.getElementById('countCap').textContent = `person${totalePersone===1?'a':'e'} (${matched.length} invitat${matched.length===1?'o':'i'}${matched.length!==totalePersone? ' + relativi +1':''})`;
+    document.getElementById('matchCount').textContent = matched.length;
+    document.getElementById('matchList').innerHTML = matched.length
+      ? matched.map(g=>g.nome + (g.plusOne? ' (+1'+(g.plusOneNome?': '+g.plusOneNome:'')+')':'')).join(' · ')
+      : 'Nessuno corrisponde a questi filtri.';
+
+    const catEl = document.getElementById('filterCategorie');
+    catEl.innerHTML = categorie.map(c=>`<div class="chip-option ${activeFilters.categorie.includes(c)?'selected':''}" data-g="categorie" data-v="${c}">${c}</div>`).join('') || '<span style="font-size:13px;color:var(--ink-soft);">Nessuna categoria ancora</span>';
+
+    const chiEl = document.getElementById('filterChi');
+    chiEl.innerHTML = [['lei',chiLabel('lei')],['lui',chiLabel('lui')],['entrambi','Entrambi']]
+      .map(([id,label])=>`<div class="chip-option ${activeFilters.chi.includes(id)?'selected':''}" data-g="chi" data-v="${id}">${label}</div>`).join('');
+
+    const etaEl = document.getElementById('filterEta');
+    etaEl.innerHTML = ETA_OPTIONS.map(o=>`<div class="chip-option ${activeFilters.eta.includes(o.id)?'selected':''}" data-g="eta" data-v="${o.id}">${o.label}</div>`).join('');
+
+    const impEl = document.getElementById('filterImportanza');
+    impEl.innerHTML = IMPORTANZA_LABELS.map((l,i)=>`<div class="chip-option ${activeFilters.importanza.includes(i)?'selected':''}" data-g="importanza" data-v="${i}">${l}</div>`).join('');
+
+    const cittaSet = [...new Set(guests.map(g=>g.cittaAttuale).filter(Boolean))];
+    const cittaEl = document.getElementById('filterCitta');
+    cittaEl.innerHTML = cittaSet.length ? cittaSet.map(c=>`<div class="chip-option ${activeFilters.citta.includes(c)?'selected':''}" data-g="citta" data-v="${c}">${c}</div>`).join('') : '<span style="font-size:13px;color:var(--ink-soft);">Aggiungi città agli invitati</span>';
+
+    const extraEl = document.getElementById('filterExtra');
+    extraEl.innerHTML = `
+      <div class="chip-option ${activeFilters.plusOne===true?'selected':''}" data-g="plusOne" data-v="true">Con +1</div>
+      <div class="chip-option ${activeFilters.plusOne===false?'selected':''}" data-g="plusOne" data-v="false">Senza +1</div>
+      ${RSVP_OPTIONS.map(o=>`<div class="chip-option ${activeFilters.rsvp.includes(o.id)?'selected':''}" data-g="rsvp" data-v="${o.id}">${o.label}</div>`).join('')}
+    `;
+
+    document.querySelectorAll('#view-statistiche .chip-option[data-g]').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const g = el.dataset.g, v = el.dataset.v;
+        if(g==='plusOne'){
+          const bool = v==='true';
+          activeFilters.plusOne = activeFilters.plusOne===bool ? null : bool;
+          renderStats();
+        } else if(g==='importanza'){
+          toggleFilter('importanza', parseInt(v));
+        } else {
+          toggleFilter(g, v);
+        }
+      });
+    });
+  }
+
+  document.getElementById('resetFilters').addEventListener('click', ()=>{
+    activeFilters = {categorie:[], chi:[], eta:[], importanza:[], citta:[], plusOne:null, rsvp:[]};
+    renderStats();
+  });
+
+  const PRESETS = [
+    {label:'Amici miei 🩷', fn:()=>({...activeFilters, chi:['lei']})},
+    {label:'Amici suoi 🤍', fn:()=>({...activeFilters, chi:['lui']})},
+    {label:'Amici comuni', fn:()=>({...activeFilters, chi:['entrambi']})},
+    {label:'Top importanza + 1', fn:()=>({categorie:[],eta:[],citta:[],rsvp:[], chi:[], importanza:[4], plusOne:true})},
+    {label:'Confermati', fn:()=>({categorie:[],eta:[],citta:[],chi:[], importanza:[], plusOne:null, rsvp:['confermato']})},
+    {label:'Bambini e neonati', fn:()=>({categorie:[],citta:[],chi:[], importanza:[], plusOne:null, rsvp:[], eta:['bambini','neonati']})}
+  ];
+  document.getElementById('presetRow').innerHTML = PRESETS.map((p,i)=>`<div class="preset-btn" data-i="${i}">${p.label}</div>`).join('');
+  document.querySelectorAll('.preset-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      activeFilters = PRESETS[parseInt(btn.dataset.i)].fn();
+      renderStats();
+    });
+  });
+
+  function cityFrequency(field){
+    const map = {};
+    guests.forEach(g=>{ const v=(g[field]||'').trim(); if(v){ map[v]=(map[v]||0)+1; } });
+    return Object.entries(map).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
+  }
+  function attachCitySuggest(inputId, boxId, field){
+    const input = document.getElementById(inputId);
+    const box = document.getElementById(boxId);
+    function show(){
+      const q = input.value.trim().toLowerCase();
+      const freq = cityFrequency(field).filter(([name])=> !q || name.toLowerCase().includes(q));
+      const top = freq.slice(0,6);
+      if(!top.length){ box.classList.remove('active'); box.innerHTML=''; return; }
+      box.innerHTML = top.map(([name,count])=>`<div class="suggest-item" data-name="${name}">${name}<span class="n">${count}×</span></div>`).join('');
+      box.classList.add('active');
+      box.querySelectorAll('.suggest-item').forEach(it=>{
+        it.addEventListener('mousedown', (e)=>{ e.preventDefault(); input.value = it.dataset.name; box.classList.remove('active'); input.dispatchEvent(new Event('input', {bubbles:true})); });
+      });
+    }
+    input.addEventListener('focus', show);
+    input.addEventListener('input', show);
+    input.addEventListener('blur', ()=> setTimeout(()=>box.classList.remove('active'), 120));
+  }
+  attachCitySuggest('fCittaAttuale','suggestCittaAttuale','cittaAttuale');
+  attachCitySuggest('fCittaConosciuti','suggestCittaConosciuti','cittaConosciuti');
+  attachCitySuggest('geCitta','suggestGeCitta','cittaAttuale');
+
+  const bulkModalOverlay = document.getElementById('bulkModalOverlay');
+  document.getElementById('bulkImportBtn').addEventListener('click', ()=>{
+    document.getElementById('bulkTextarea').value='';
+    renderBulkPreview();
+    bulkModalOverlay.classList.add('active');
+  });
+  document.getElementById('closeBulkModal').addEventListener('click', ()=>bulkModalOverlay.classList.remove('active'));
+  document.getElementById('bulkCancelBtn').addEventListener('click', ()=>bulkModalOverlay.classList.remove('active'));
+  bulkModalOverlay.addEventListener('click', e=>{ if(e.target===bulkModalOverlay) bulkModalOverlay.classList.remove('active'); });
+  document.getElementById('bulkTextarea').addEventListener('input', renderBulkPreview);
+
+  function parseNamesList(text){
+    let lines = text.split(/\n+/).map(l=>l.trim()).filter(Boolean);
+    if(lines.length<=1 && text.includes(',')){
+      lines = text.split(',').map(l=>l.trim()).filter(Boolean);
+    }
+    return lines.map(l=> l.replace(/^[\-\*•]+\s*/,'').replace(/^\d+[\.\)]\s*/,'').trim()).filter(Boolean);
+  }
+
+  function renderBulkPreview(){
+    const names = parseNamesList(document.getElementById('bulkTextarea').value);
+    const existingLower = guests.map(g=>g.nome.trim().toLowerCase());
+    const seen = new Set();
+    let nuovi=0, duplicati=0;
+    const chips = names.map(n=>{
+      const low = n.toLowerCase();
+      const isDup = existingLower.includes(low) || seen.has(low);
+      if(!isDup){ seen.add(low); nuovi++; } else { duplicati++; }
+      return `<span class="bulk-name-chip ${isDup?'dup':''}">${n}</span>`;
+    }).join('');
+    document.getElementById('bulkNamesPreview').innerHTML = chips;
+    document.getElementById('bulkPreview').textContent = names.length
+      ? `${names.length} nomi trovati · ${nuovi} verranno aggiunti · ${duplicati} già presenti (saltati)`
+      : 'Incolla o scrivi un nome per riga.';
+  }
+
+  document.getElementById('bulkConfirmBtn').addEventListener('click', ()=>{
+    const names = parseNamesList(document.getElementById('bulkTextarea').value);
+    const existingLower = guests.map(g=>g.nome.trim().toLowerCase());
+    const seen = new Set();
+    let added=0;
+    let nextOrder = guests.filter(g=>!g.groupId).length;
+    names.forEach(n=>{
+      const low = n.toLowerCase();
+      if(existingLower.includes(low) || seen.has(low)) return;
+      seen.add(low);
+      guests.push({
+        id: uid(), nome:n, categorie:[], cittaAttuale:'', cittaConosciuti:'',
+        eta:'adulti-noi', chi:'entrambi', importanza:2, plusOne:false, plusOneNome:'',
+        isPlusOneOf:'', rsvp:'attesa', invitoInviato:false, allergie:'', note:'',
+        groupId:'', order: nextOrder++
+      });
+      added++;
+    });
+    saveGuests();
+    bulkModalOverlay.classList.remove('active');
+    renderAll();
+    if(added>0) alert(`Aggiunti ${added} invitati! Apri ciascuno per completare i dettagli.`);
+  });
+
+  function renderAll(){
+    renderSummary();
+    renderList();
+  }
+  renderAll();
+
+})();
+</script>
+</body>
+</html>
