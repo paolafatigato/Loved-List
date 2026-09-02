@@ -314,6 +314,7 @@
   .group-drag-handle{cursor:grab; color:var(--ink-soft); font-size:18px; padding:2px 6px; touch-action:none; flex-shrink:0; user-select:none;}
 .group-block.dragging-group{position:fixed; z-index:200; box-shadow:var(--shadow); opacity:.97;}
 .group-drag-placeholder{border:1.5px dashed var(--magenta); border-radius:var(--radius); background:#FCE4F3; opacity:.4;}
+.group-block.drop-target-into{outline:2px dashed var(--magenta); outline-offset:-2px; background:#FCE4F3;}
 .group-header{cursor:pointer;}
 .group-chevron{font-size:11px; color:var(--ink-soft); flex-shrink:0; transition:.15s; margin-left:2px;}
 .group-block.expanded .group-chevron{transform:rotate(180deg);}
@@ -331,6 +332,13 @@
   .drag-edit-btn{border:none; background:none; cursor:pointer; font-size:14px; color:var(--ink-soft); flex-shrink:0;}
   .drag-placeholder{border:1.5px dashed var(--magenta); border-radius:10px; background:#FCE4F3; opacity:.5;}
   .group-empty-hint{font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:6px 2px;}
+  .subgroups-container{display:none; flex-direction:column; gap:12px; margin-top:12px; padding-left:16px; border-left:2px dashed var(--line);}
+  .group-block.expanded > .subgroups-container{display:flex;}
+  .group-block.is-subgroup{background:var(--cream); box-shadow:none;}
+  .group-block.is-subgroup .group-name-input,
+  .group-block.is-subgroup .group-title-static{font-size:14px; color:var(--ink-soft);}
+  .group-block.is-subgroup{border-left:3px solid var(--lilla);}
+  .subgroup-empty-hint{font-size:12px; color:var(--ink-soft); font-style:italic; padding:4px 2px 0;}
   .select-check{display:flex; align-items:center; padding:2px 4px 2px 2px; flex-shrink:0;}
   .select-check input{width:18px; height:18px; accent-color:var(--magenta); cursor:pointer;}
   .group-select-toolbar{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
@@ -375,6 +383,7 @@
   .sidebar-item:hover{background:var(--line-soft);}
   .sidebar-item-ungrouped{color:var(--ink-soft); font-style:italic; cursor:default;}
   .sidebar-item-ungrouped:hover{background:none;}
+  .sidebar-item-sub{padding-left:24px; font-size:12.5px; color:var(--ink-soft);}
   .sidebar-item-active{background:#FCE4F3; color:var(--magenta); font-weight:700;}
   .sidebar-item-active:hover{background:#FCE4F3;}
   .sidebar-item-active .sidebar-item-count{color:var(--magenta);}
@@ -698,7 +707,10 @@ Marco e Sara (colleghi)"></textarea>
 <div class="modal-overlay" id="groupEditModalOverlay">
   <div class="modal">
     <h2><span id="groupEditTitle">Modifica gruppo</span><button class="close-x" id="closeGroupEditModal">✕</button></h2>
-    <p class="hint-text" style="margin-bottom:14px;">Spunta solo i campi che vuoi applicare a tutti i membri del gruppo. Gli altri restano come sono per ciascuno (nome, allergie, note e +1 sono sempre individuali).</p>
+    <p class="hint-text" style="margin-bottom:14px;">Spunta solo i campi che vuoi applicare a tutti i membri del gruppo (e dei suoi sottogruppi, se ce ne sono). Un campo già personalizzato su un sottogruppo o su un singolo invitato non viene sovrascritto, a meno che tu non attivi l'opzione qui sotto. Nome, allergie, note e +1 restano sempre individuali.</p>
+    <div class="field">
+      <div class="toggle-row"><label>Sovrascrivi anche i valori già personalizzati</label><label class="switch"><input type="checkbox" id="geForceOverride"><span class="slider"></span></label></div>
+    </div>
     <div class="field">
       <div class="toggle-row"><label>Categorie</label><label class="switch"><input type="checkbox" id="geApplyCategorie"><span class="slider"></span></label></div>
       <div class="chip-group" id="geCategorie"></div>
@@ -796,10 +808,54 @@ Marco e Sara (colleghi)"></textarea>
   ];
   const DEFAULT_CATEGORIE = ['Famiglia','Palestra','Università','Lavoro','Vacanza'];
 
+  // Campi che possono essere impostati in blocco da un gruppo/sottogruppo, con la relativa gerarchia di precedenza
+  const BULK_FIELDS = ['categorie','cittaAttuale','cittaConosciuti','eta','chi','importanza','rsvp','invitoInviato'];
+  const FIELD_LEVEL_RANK = {gruppo:1, sottogruppo:2, individuale:3};
+
   let guests = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
   let categorie = JSON.parse(localStorage.getItem(CAT_KEY) || 'null') || DEFAULT_CATEGORIE.slice();
   let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null') || {nomeLei:'Io', nomeLui:'Lui'};
   let groups = JSON.parse(localStorage.getItem(GROUPS_KEY) || '[]');
+  normalizeGroups();
+
+  // Un gruppo è un sottogruppo se ha un parentId valido; limite fisso a 2 livelli (gruppo -> sottogruppo)
+  function normalizeGroups(){
+    groups.forEach(g=>{ if(!g.parentId) g.parentId=''; });
+    groups.forEach(g=>{ if(g.parentId && !groups.some(x=>x.id===g.parentId)) g.parentId=''; });
+    groups.forEach(g=>{
+      if(g.parentId){
+        const parent = groups.find(x=>x.id===g.parentId);
+        if(parent && parent.parentId) g.parentId = ''; // evita nidificazione oltre 2 livelli
+      }
+    });
+  }
+  function groupLevelOf(gr){ return (gr && gr.parentId) ? 'sottogruppo' : 'gruppo'; }
+  function childGroupsOf(gid){ return groups.filter(x=>x.parentId===gid); }
+  function canApplyField(guest, field, level, force){
+    if(force) return true;
+    const cur = guest.fieldOrigin && guest.fieldOrigin[field];
+    if(!cur) return true;
+    return FIELD_LEVEL_RANK[level] >= FIELD_LEVEL_RANK[cur];
+  }
+  function setFieldOrigin(guest, field, level){
+    if(!guest.fieldOrigin) guest.fieldOrigin = {};
+    guest.fieldOrigin[field] = level;
+  }
+  function flattenedGroupOrder(){
+    const roots = groups.filter(g=>!g.parentId);
+    const result = [];
+    roots.forEach(r=>{ result.push(r); childGroupsOf(r.id).forEach(c=>result.push(c)); });
+    return result;
+  }
+  function groupPathLabel(gid){
+    const gr = groups.find(x=>x.id===gid);
+    if(!gr) return 'Gruppo';
+    if(gr.parentId){
+      const parent = groups.find(x=>x.id===gr.parentId);
+      return (parent?parent.nome:'') + ' → ' + gr.nome;
+    }
+    return gr.nome;
+  }
 
   function saveGuests(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(guests)); syncToFirestore(); }
   function saveCategorie(){ localStorage.setItem(CAT_KEY, JSON.stringify(categorie)); syncToFirestore(); }
@@ -820,6 +876,7 @@ Marco e Sara (colleghi)"></textarea>
     categorie = data.categorie || DEFAULT_CATEGORIE.slice();
     settings = data.settings || {nomeLei:'Io', nomeLui:'Lui'};
     groups = data.groups || [];
+    normalizeGroups();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(guests));
     localStorage.setItem(CAT_KEY, JSON.stringify(categorie));
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -974,7 +1031,14 @@ Marco e Sara (colleghi)"></textarea>
 
   function renderGroupSelect(){
     const sel = document.getElementById('fGroup');
-    sel.innerHTML = '<option value="">Nessun gruppo</option>' + groups.map(gr=>`<option value="${gr.id}">${gr.nome}</option>`).join('');
+    let opts = '<option value="">Nessun gruppo</option>';
+    groups.filter(g=>!g.parentId).forEach(gr=>{
+      opts += `<option value="${gr.id}">${gr.nome}</option>`;
+      childGroupsOf(gr.id).forEach(sub=>{
+        opts += `<option value="${sub.id}">↳ ${sub.nome}</option>`;
+      });
+    });
+    sel.innerHTML = opts;
     sel.value = formState.groupId || '';
   }
 
@@ -1171,8 +1235,16 @@ Marco e Sara (colleghi)"></textarea>
       allergie: document.getElementById('fAllergie').value.trim(),
       note: document.getElementById('fNote').value.trim(),
       groupId: chosenGroupId,
-      order
+      order,
+      fieldOrigin: existingGuest ? Object.assign({}, existingGuest.fieldOrigin) : {}
     };
+    if(existingGuest){
+      BULK_FIELDS.forEach(field=>{
+        if(JSON.stringify(existingGuest[field]) !== JSON.stringify(data[field])){
+          data.fieldOrigin[field] = 'individuale';
+        }
+      });
+    }
     if(editingId){
       const idx = guests.findIndex(g=>g.id===editingId);
       guests[idx] = data;
@@ -1301,7 +1373,8 @@ Marco e Sara (colleghi)"></textarea>
     else if(sortMode==='importanza') list.sort((a,b)=>b.importanza-a.importanza);
     else if(sortMode==='categoria') list.sort((a,b)=>(a.categorie[0]||'').localeCompare(b.categorie[0]||''));
     else if(groups.length>0){
-      const groupIndex = (g)=>{ if(!g.groupId) return groups.length; const i=groups.findIndex(x=>x.id===g.groupId); return i===-1? groups.length : i; };
+      const order = flattenedGroupOrder();
+      const groupIndex = (g)=>{ if(!g.groupId) return order.length; const i=order.findIndex(x=>x.id===g.groupId); return i===-1? order.length : i; };
       list.sort((a,b)=>{
         const gi = groupIndex(a)-groupIndex(b);
         if(gi!==0) return gi;
@@ -1314,7 +1387,7 @@ Marco e Sara (colleghi)"></textarea>
     let lastHeader;
     list.forEach(g=>{
       if(sortMode==='default' && groups.length>0){
-        const gName = g.groupId ? ((groups.find(x=>x.id===g.groupId)||{}).nome || 'Gruppo') : 'Senza gruppo';
+        const gName = g.groupId ? groupPathLabel(g.groupId) : 'Senza gruppo';
         if(gName !== lastHeader){
           html += `<div class="list-group-header">${gName}</div>`;
           lastHeader = gName;
@@ -1385,7 +1458,7 @@ Marco e Sara (colleghi)"></textarea>
       const linked = getLinkedPlusOne(g.id);
       const plusVal = linked ? linked.nome : (g.plusOne ? (g.plusOneNome||'+1') : '');
       const relVal = g.isPlusOneOf ? ('+1 di '+((guests.find(x=>x.id===g.isPlusOneOf)||{}).nome||'')) : '';
-      const gruppoVal = g.groupId ? ((groups.find(x=>x.id===g.groupId)||{}).nome || '') : 'Senza gruppo';
+      const gruppoVal = g.groupId ? groupPathLabel(g.groupId) : 'Senza gruppo';
       rows.push([
         g.nome,
         plusVal,
@@ -1434,6 +1507,7 @@ Marco e Sara (colleghi)"></textarea>
         categorie = data.categorie || DEFAULT_CATEGORIE.slice();
         settings = data.settings || {nomeLei:'Io', nomeLui:'Lui'};
         groups = data.groups || [];
+        normalizeGroups();
         saveGuests(); saveCategorie(); saveSettings(); saveGroups();
         nomeLeiInput.value = settings.nomeLei;
         nomeLuiInput.value = settings.nomeLui;
@@ -1492,13 +1566,26 @@ Marco e Sara (colleghi)"></textarea>
     const input = document.getElementById('newGroupInput');
     const val = input.value.trim();
     if(val){
-      groups.push({id:uid(), nome:val});
+      groups.push({id:uid(), nome:val, parentId:''});
       saveGroups();
       input.value='';
       renderGruppiTab();
       renderAll();
     }
   });
+
+  function addSubgroup(parentId){
+    const parent = groups.find(x=>x.id===parentId);
+    if(!parent) return;
+    const nome = prompt(`Nome del nuovo sottogruppo di "${parent.nome}":`);
+    if(nome && nome.trim()){
+      groups.push({id:uid(), nome:nome.trim(), parentId});
+      saveGroups();
+      expandedGroupIds.add(parentId);
+      renderGruppiTab();
+      renderAll();
+    }
+  }
 
   function expandAllGroups(){
     expandedGroupIds = new Set([...groups.map(g=>g.id), '']);
@@ -1550,20 +1637,24 @@ Marco e Sara (colleghi)"></textarea>
     }
   }
 
-  function renderGruppiTab(){
-    const container = document.getElementById('groupsContainer');
-    let html = '';
-    groups.forEach(gr=>{
-      const members = guests.filter(g=>g.groupId===gr.id).sort((a,b)=>(a.order||0)-(b.order||0));
-      const isExpanded = expandedGroupIds.has(gr.id);
-      html += `
-      <div class="group-block${isExpanded?' expanded':''}" data-group-id="${gr.id}">
+  function groupBlockHtml(gr){
+    const members = guests.filter(g=>g.groupId===gr.id).sort((a,b)=>(a.order||0)-(b.order||0));
+    const isExpanded = expandedGroupIds.has(gr.id);
+    const isParent = !gr.parentId;
+    const children = isParent ? childGroupsOf(gr.id) : [];
+    const totalCount = isParent ? members.length + children.reduce((acc,c)=> acc + guests.filter(g=>g.groupId===c.id).length, 0) : members.length;
+    const countLabel = (isParent && children.length)
+      ? `${totalCount} person${totalCount===1?'a':'e'} (${members.length} dirett${members.length===1?'a':'e'} + sottogruppi)`
+      : `${members.length} person${members.length===1?'a':'e'}`;
+    return `
+      <div class="group-block${isExpanded?' expanded':''}${gr.parentId?' is-subgroup':''}" data-group-id="${gr.id}">
         <div class="group-header">
-          <span class="group-drag-handle" title="Trascina per riordinare i gruppi">⠿</span>
+          <span class="group-drag-handle" title="Trascina per riordinare">⠿</span>
           <input class="group-name-input" value="${gr.nome}" data-group-id="${gr.id}">
           <span class="group-chevron">▾</span>
-          <span class="group-count">${members.length} person${members.length===1?'a':'e'}</span>
+          <span class="group-count">${countLabel}</span>
           <div class="group-actions">
+            ${isParent ? `<button class="group-mini-btn ge-addsub" data-group-id="${gr.id}" title="Aggiungi sottogruppo">↳+</button>` : ''}
             <button class="group-mini-btn ge-edit" data-group-id="${gr.id}" title="Modifica gruppo">✏️</button>
             <button class="group-mini-btn ge-del" data-group-id="${gr.id}" title="Elimina gruppo">🗑</button>
           </div>
@@ -1576,10 +1667,16 @@ Marco e Sara (colleghi)"></textarea>
           <button class="icon-btn group-add-btn" data-group-id="${gr.id}" title="Aggiungi nuovo invitato direttamente qui">+</button>
         </div>
         <div class="group-members" data-group-id="${gr.id}">
-          ${members.length ? members.map(g=>dragRowHtml(g)).join('') : '<div class="group-empty-hint">Trascina qui un invitato per aggiungerlo.</div>'}
+          ${members.length ? members.map(g=>dragRowHtml(g)).join('') : `<div class="group-empty-hint">Trascina qui un invitato per aggiungerlo${isParent?' (o crea un sottogruppo)':''}.</div>`}
         </div>
+        ${isParent ? `<div class="subgroups-container" data-parent-id="${gr.id}">${children.length ? children.map(c=>groupBlockHtml(c)).join('') : ''}</div>` : ''}
       </div>`;
-    });
+  }
+
+  function renderGruppiTab(){
+    const container = document.getElementById('groupsContainer');
+    let html = '';
+    groups.filter(gr=>!gr.parentId).forEach(gr=>{ html += groupBlockHtml(gr); });
     const ungrouped = guests.filter(g=>!g.groupId).sort((a,b)=>(a.order||0)-(b.order||0));
     const ungroupedExpanded = expandedGroupIds.has('');
     html += `
@@ -1654,8 +1751,9 @@ Marco e Sara (colleghi)"></textarea>
       inp.addEventListener('focus', showResults);
       inp.addEventListener('blur', ()=> setTimeout(()=>box.classList.remove('active'), 150));
     });
-    container.querySelectorAll('.ge-edit').forEach(btn=> btn.addEventListener('click', ()=>openGroupEditModal(btn.dataset.groupId)));
-    container.querySelectorAll('.ge-del').forEach(btn=> btn.addEventListener('click', ()=>deleteGroup(btn.dataset.groupId)));
+    container.querySelectorAll('.ge-edit').forEach(btn=> btn.addEventListener('click', (e)=>{ e.stopPropagation(); openGroupEditModal(btn.dataset.groupId); }));
+    container.querySelectorAll('.ge-del').forEach(btn=> btn.addEventListener('click', (e)=>{ e.stopPropagation(); deleteGroup(btn.dataset.groupId); }));
+    container.querySelectorAll('.ge-addsub').forEach(btn=> btn.addEventListener('click', (e)=>{ e.stopPropagation(); addSubgroup(btn.dataset.groupId); }));
     updateSelectionBar();
     renderGruppiSidebar();
   }
@@ -1664,16 +1762,27 @@ Marco e Sara (colleghi)"></textarea>
     const sidebarList = document.getElementById('gruppiSidebarList');
     if(!sidebarList) return;
     let html = '';
-    groups.forEach(gr=>{
-      const count = guests.filter(g=>g.groupId===gr.id).length;
-      html += `<div class="sidebar-item" data-group-id="${gr.id}">
+    groups.filter(gr=>!gr.parentId).forEach(gr=>{
+      const children = childGroupsOf(gr.id);
+      const directCount = guests.filter(g=>g.groupId===gr.id).length;
+      const totalCount = directCount + children.reduce((acc,c)=>acc+guests.filter(g=>g.groupId===c.id).length,0);
+      html += `<div class="sidebar-item" data-group-id="${gr.id}" data-parent-id="">
         <span class="sidebar-drag-handle" title="Trascina per riordinare">⠿</span>
         <span class="sidebar-item-name">${gr.nome}</span>
-        <span class="sidebar-item-count">${count}</span>
+        <span class="sidebar-item-count">${totalCount}</span>
       </div>`;
+      children.forEach(sub=>{
+        const count = guests.filter(g=>g.groupId===sub.id).length;
+        html += `<div class="sidebar-item sidebar-item-sub" data-group-id="${sub.id}" data-parent-id="${gr.id}">
+          <span class="sidebar-drag-handle" title="Trascina per riordinare">⠿</span>
+          <span class="sidebar-item-name">↳ ${sub.nome}</span>
+          <span class="sidebar-item-count">${count}</span>
+        </div>`;
+      });
     });
     const ungroupedCount = guests.filter(g=>!g.groupId).length;
-    html += `<div class="sidebar-item sidebar-item-ungrouped" data-group-id="">
+    html += `<div class="sidebar-item sidebar-item-ungrouped" data-group-id="" data-parent-id="">
+      <span class="sidebar-drag-handle" title="Trascina per riordinare">⠿</span>
       <span class="sidebar-item-name">Senza gruppo</span>
       <span class="sidebar-item-count">${ungroupedCount}</span>
     </div>`;
@@ -1683,7 +1792,9 @@ Marco e Sara (colleghi)"></textarea>
       item.addEventListener('click', (e)=>{
         if(e.target.closest('.sidebar-drag-handle')) return;
         const gid = item.dataset.groupId;
+        const gr = groups.find(x=>x.id===gid);
         expandedGroupIds.add(gid);
+        if(gr && gr.parentId) expandedGroupIds.add(gr.parentId);
         renderGruppiTab();
         requestAnimationFrame(()=>{
           const freshBlock = document.querySelector(`.group-block[data-group-id="${gid}"]`);
@@ -1697,16 +1808,22 @@ Marco e Sara (colleghi)"></textarea>
   function syncGroupOrderFromSidebarDom(){
     const list = document.getElementById('gruppiSidebarList');
     if(!list) return;
-    const orderedIds = Array.from(list.querySelectorAll('.sidebar-item'))
-      .map(el=>el.dataset.groupId)
-      .filter(id=>id!=='');
-    groups.sort((a,b)=> orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id));
+    const newGroups = [];
+    Array.from(list.querySelectorAll('.sidebar-item[data-group-id]')).forEach(item=>{
+      const gid = item.dataset.groupId;
+      if(gid==='') return;
+      const gr = groups.find(x=>x.id===gid);
+      if(gr && !newGroups.includes(gr)) newGroups.push(gr);
+    });
+    groups.forEach(g=>{ if(!newGroups.includes(g)) newGroups.push(g); });
+    groups = newGroups;
     saveGroups();
     renderGruppiTab();
   }
 
   function setupDragForSidebarItem(handle){
     const item = handle.closest('.sidebar-item');
+    const level = item.dataset.parentId || '';
     handle.addEventListener('pointerdown', (e)=>{
       if(e.button !== undefined && e.button !== 0) return;
       e.preventDefault();
@@ -1731,7 +1848,7 @@ Marco e Sara (colleghi)"></textarea>
         item.style.pointerEvents = '';
         if(!elBelow) return;
         const targetItem = elBelow.closest('.sidebar-item');
-        if(targetItem && targetItem!==item && targetItem.dataset.groupId!=='' && targetItem.parentNode===list){
+        if(targetItem && targetItem!==item && targetItem.dataset.groupId!=='' && targetItem.parentNode===list && (targetItem.dataset.parentId||'')===level){
           const tRect = targetItem.getBoundingClientRect();
           const before = ev.clientY < tRect.top + tRect.height/2;
           list.insertBefore(placeholder, before ? targetItem : targetItem.nextSibling);
@@ -1754,12 +1871,24 @@ Marco e Sara (colleghi)"></textarea>
   function deleteGroup(gid){
     const gr = groups.find(x=>x.id===gid);
     if(!gr) return;
-    if(!confirm(`Eliminare il gruppo "${gr.nome}"? I suoi membri torneranno "senza gruppo".`)) return;
-    const freed = guests.filter(g=>g.groupId===gid).sort((a,b)=>(a.order||0)-(b.order||0));
+    const children = childGroupsOf(gid);
+    let cascade = false;
+    if(children.length){
+      cascade = confirm(`Il gruppo "${gr.nome}" contiene ${children.length} sottogrupp${children.length===1?'o':'i'}.\n\nOK = elimina anche i sottogruppi (i loro membri torneranno "Senza gruppo").\nAnnulla = mantieni i sottogruppi, che diventeranno gruppi di primo livello.`);
+    } else {
+      if(!confirm(`Eliminare il gruppo "${gr.nome}"? I suoi membri torneranno "Senza gruppo".`)) return;
+    }
+    const idsToFree = [gid, ...(cascade ? children.map(c=>c.id) : [])];
+    const freed = guests.filter(g=>idsToFree.includes(g.groupId)).sort((a,b)=>(a.order||0)-(b.order||0));
     const existingUngrouped = guests.filter(g=>!g.groupId).sort((a,b)=>(a.order||0)-(b.order||0));
     [...existingUngrouped, ...freed].forEach((g,idx)=>{ g.groupId=''; g.order=idx; });
-    groups = groups.filter(x=>x.id!==gid);
+
+    if(children.length && !cascade){
+      children.forEach(c=>{ c.parentId=''; });
+    }
+    groups = groups.filter(x=> x.id!==gid && !(cascade && children.some(c=>c.id===x.id)));
     expandedGroupIds.delete(gid);
+    children.forEach(c=> expandedGroupIds.delete(c.id));
     saveGroups(); saveGuests();
     renderGruppiTab(); renderAll();
   }
@@ -1862,66 +1991,167 @@ Marco e Sara (colleghi)"></textarea>
   }
 
   function syncGroupOrderFromDom(){
-  const container = document.getElementById('groupsContainer');
-  const orderedIds = Array.from(container.querySelectorAll('.group-block'))
-    .map(b=>b.dataset.groupId)
-    .filter(id=>id!=='');
-  groups.sort((a,b)=> orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id));
-  saveGroups();
-  renderGruppiTab();
-  renderAll();
-}
-
-function setupDragForGroupBlock(block){
-  const handle = block.querySelector('.group-drag-handle');
-  if(!handle) return;
-  handle.addEventListener('pointerdown', (e)=>{
-    if(e.button !== undefined && e.button !== 0) return;
-    e.preventDefault();
     const container = document.getElementById('groupsContainer');
-    const rect = block.getBoundingClientRect();
-    const offsetY = e.clientY - rect.top;
-    const placeholder = document.createElement('div');
-    placeholder.className = 'group-drag-placeholder';
-    placeholder.style.height = rect.height+'px';
-    container.insertBefore(placeholder, block);
-    block.classList.add('dragging-group');
-    block.style.width = rect.width+'px';
-    block.style.left = rect.left+'px';
-    block.style.top = rect.top+'px';
-    document.body.appendChild(block);
-    try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+    const newGroups = [];
+    Array.from(container.children).forEach(topBlock=>{
+      if(!topBlock.classList || !topBlock.classList.contains('group-block')) return;
+      const gid = topBlock.dataset.groupId;
+      if(gid===''){ return; }
+      const gr = groups.find(x=>x.id===gid);
+      if(gr && !newGroups.includes(gr)) newGroups.push(gr);
+      const subContainer = topBlock.querySelector('.subgroups-container');
+      if(subContainer){
+        Array.from(subContainer.children).forEach(subBlock=>{
+          if(!subBlock.classList || !subBlock.classList.contains('group-block')) return;
+          const sgid = subBlock.dataset.groupId;
+          const sgr = groups.find(x=>x.id===sgid);
+          if(sgr && !newGroups.includes(sgr)) newGroups.push(sgr);
+        });
+      }
+    });
+    groups.forEach(g=>{ if(!newGroups.includes(g)) newGroups.push(g); });
+    groups = newGroups;
+    saveGroups();
+    renderGruppiTab();
+    renderAll();
+  }
 
-    function onMove(ev){
-      block.style.top = (ev.clientY - offsetY)+'px';
-      block.style.pointerEvents = 'none';
-      const elBelow = document.elementFromPoint(ev.clientX, ev.clientY);
-      block.style.pointerEvents = '';
-      if(!elBelow) return;
-      const targetBlock = elBelow.closest('.group-block');
-      if(targetBlock && targetBlock!==block && targetBlock.parentNode===container){
-        if(targetBlock.dataset.groupId===''){
-          container.insertBefore(placeholder, targetBlock);
-        } else {
-          const tRect = targetBlock.getBoundingClientRect();
-          const before = ev.clientY < tRect.top + tRect.height/2;
-          container.insertBefore(placeholder, before ? targetBlock : targetBlock.nextSibling);
+  // Decide, in base a cosa si trova sotto il puntatore, cosa succederà al gruppo trascinato al rilascio:
+  // - 'subcontainer' = entra nei sottogruppi di el (el è un .subgroups-container) -> el.dataset.parentId diventa il nuovo padre
+  //   (include il caso "centro di un gruppo di primo livello": trascinare un gruppo SOPRA un altro lo rende suo sottogruppo)
+  // - 'sibling'       = va inserito come fratello, prima o dopo target, nello stesso contenitore di target
+  //   (trascinare un sottogruppo sopra un gruppo di primo livello, ma vicino al suo bordo, oppure su un altro sottogruppo,
+  //    o nello spazio tra due gruppi di primo livello, lo fa restare/tornare a quel livello)
+  // - 'root'          = spazio vuoto dell'elenco principale -> primo livello
+  function decideGroupDropTarget(elBelow, clientY, block, rootContainer){
+    if(!elBelow) return null;
+    if(block.contains(elBelow)) return null; // ignora il proprio blocco (che si trascina con eventuali sottogruppi)
+
+    const closestSubContainer = elBelow.closest('.subgroups-container');
+    const closestGroupBlock = elBelow.closest('.group-block');
+    const targetIsNestedBlock = !!(closestGroupBlock && closestSubContainer && closestSubContainer.contains(closestGroupBlock));
+
+    if(closestSubContainer && !targetIsNestedBlock){
+      if(block.contains(closestSubContainer)) return null; // non si può entrare nei propri sottogruppi
+      return {action:'subcontainer', el: closestSubContainer};
+    }
+
+    if(closestGroupBlock && closestGroupBlock!==block && !block.contains(closestGroupBlock)){
+      const targetGid = closestGroupBlock.dataset.groupId;
+      if(targetGid===''){
+        return {action:'sibling', before:true, target: closestGroupBlock}; // "Senza gruppo" resta sempre ultimo
+      }
+      const targetGr = groups.find(x=>x.id===targetGid);
+      const targetIsTopLevel = !!(targetGr && !targetGr.parentId);
+      const tRect = closestGroupBlock.getBoundingClientRect();
+      const relY = tRect.height ? (clientY - tRect.top) / tRect.height : 0.5;
+
+      // Zona centrale di un gruppo di primo livello: trascinare SOPRA un gruppo lo rende suo sottogruppo.
+      // Un sottogruppo non può a sua volta ricevere sottogruppi (limite a 2 livelli), quindi per lui vale solo il riordino.
+      if(targetIsTopLevel && relY > 0.25 && relY < 0.75){
+        const subContainer = closestGroupBlock.querySelector('.subgroups-container');
+        if(subContainer) return {action:'subcontainer', el: subContainer};
+      }
+      return {action:'sibling', before: relY < 0.5, target: closestGroupBlock};
+    }
+
+    if(elBelow===rootContainer || rootContainer.contains(elBelow)){
+      return {action:'root'};
+    }
+    return null;
+  }
+
+  function applyGroupDropResult(block, destContainer, rootContainer){
+    const gid = block.dataset.groupId;
+    const gr = groups.find(x=>x.id===gid);
+    if(!gr){ renderGruppiTab(); return; }
+
+    const isRoot = destContainer===rootContainer;
+    const newParentId = isRoot ? '' : (destContainer.dataset.parentId || '');
+
+    if(newParentId === (gr.parentId||'')){
+      syncGroupOrderFromDom();
+      return;
+    }
+
+    const children = childGroupsOf(gid);
+    if(children.length && newParentId){
+      const ok = confirm(`"${gr.nome}" ha ${children.length} sottogrupp${children.length===1?'o':'i'}. Per renderlo un sottogruppo qui, i suoi sottogruppi diventeranno gruppi di primo livello. Continuare?`);
+      if(!ok){ renderGruppiTab(); return; }
+      children.forEach(c=>{ c.parentId=''; });
+    }
+
+    gr.parentId = newParentId;
+    if(newParentId) expandedGroupIds.add(newParentId);
+    syncGroupOrderFromDom();
+  }
+
+  function setupDragForGroupBlock(block){
+    const handle = block.querySelector('.group-drag-handle');
+    if(!handle) return;
+    handle.addEventListener('pointerdown', (e)=>{
+      if(e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      const rootContainer = document.getElementById('groupsContainer');
+      const startParent = block.parentNode;
+      const rect = block.getBoundingClientRect();
+      const offsetY = e.clientY - rect.top;
+      const placeholder = document.createElement('div');
+      placeholder.className = 'group-drag-placeholder';
+      placeholder.style.height = rect.height+'px';
+      startParent.insertBefore(placeholder, block);
+      block.classList.add('dragging-group');
+      block.style.width = rect.width+'px';
+      block.style.left = rect.left+'px';
+      block.style.top = rect.top+'px';
+      document.body.appendChild(block);
+      try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+
+      let highlightedBlock = null;
+      function setHighlight(newTarget){
+        if(highlightedBlock === newTarget) return;
+        if(highlightedBlock) highlightedBlock.classList.remove('drop-target-into');
+        highlightedBlock = newTarget;
+        if(highlightedBlock) highlightedBlock.classList.add('drop-target-into');
+      }
+
+      function onMove(ev){
+        block.style.top = (ev.clientY - offsetY)+'px';
+        block.style.pointerEvents = 'none';
+        const elBelow = document.elementFromPoint(ev.clientX, ev.clientY);
+        block.style.pointerEvents = '';
+        const decision = decideGroupDropTarget(elBelow, ev.clientY, block, rootContainer);
+        if(!decision){ setHighlight(null); return; }
+        if(decision.action==='subcontainer'){
+          setHighlight(decision.el.closest('.group-block'));
+          decision.el.appendChild(placeholder);
+        } else if(decision.action==='sibling'){
+          setHighlight(null);
+          const destContainer = decision.target.parentNode;
+          destContainer.insertBefore(placeholder, decision.before ? decision.target : decision.target.nextSibling);
+        } else if(decision.action==='root'){
+          setHighlight(null);
+          const senzaGruppoBlock = rootContainer.querySelector('.group-block[data-group-id=""]');
+          if(senzaGruppoBlock) rootContainer.insertBefore(placeholder, senzaGruppoBlock);
+          else rootContainer.appendChild(placeholder);
         }
       }
-    }
-    function onUp(ev){
-      try{ handle.releasePointerCapture(ev.pointerId); }catch(err){}
-      handle.removeEventListener('pointermove', onMove);
-      handle.removeEventListener('pointerup', onUp);
-      block.classList.remove('dragging-group');
-      block.style.position=''; block.style.left=''; block.style.top=''; block.style.width=''; block.style.pointerEvents='';
-      if(placeholder.parentNode){ placeholder.parentNode.insertBefore(block, placeholder); placeholder.remove(); }
-      syncGroupOrderFromDom();
-    }
-    handle.addEventListener('pointermove', onMove);
-    handle.addEventListener('pointerup', onUp);
-  });
-}
+      function onUp(ev){
+        try{ handle.releasePointerCapture(ev.pointerId); }catch(err){}
+        handle.removeEventListener('pointermove', onMove);
+        handle.removeEventListener('pointerup', onUp);
+        setHighlight(null);
+        block.classList.remove('dragging-group');
+        block.style.position=''; block.style.left=''; block.style.top=''; block.style.width=''; block.style.pointerEvents='';
+        const destContainer = placeholder.parentNode || startParent;
+        destContainer.insertBefore(block, placeholder);
+        placeholder.remove();
+        applyGroupDropResult(block, destContainer, rootContainer);
+      }
+      handle.addEventListener('pointermove', onMove);
+      handle.addEventListener('pointerup', onUp);
+    });
+  }
   /* ---------------- MODIFICA GRUPPO (bulk edit) ---------------- */
   const groupEditModalOverlay = document.getElementById('groupEditModalOverlay');
   let currentGroupEditId = null;
@@ -1931,11 +2161,14 @@ function setupDragForGroupBlock(block){
     const gr = groups.find(x=>x.id===gid);
     if(!gr) return;
     currentGroupEditId = gid;
-    document.getElementById('groupEditTitle').textContent = 'Modifica gruppo: ' + gr.nome;
+    const children = childGroupsOf(gid);
+    const titleSuffix = (!gr.parentId && children.length) ? ' (include i sottogruppi)' : '';
+    document.getElementById('groupEditTitle').textContent = 'Modifica ' + (gr.parentId?'sottogruppo':'gruppo') + ': ' + gr.nome + titleSuffix;
     geState = {categorie:[], citta:'', cittaConosciuti:'', eta:'adulti-noi', chi:'entrambi', importanza:2, rsvp:'attesa', invitoInviato:false};
     ['geApplyCategorie','geApplyCitta','geApplyCittaConosciuti','geApplyEta','geApplyChi','geApplyImportanza','geApplyRsvp','geApplyInvito'].forEach(id=>{
       document.getElementById(id).checked = false;
     });
+    document.getElementById('geForceOverride').checked = false;
     document.getElementById('geCitta').value = '';
     document.getElementById('geCittaConosciuti').value = '';
     document.getElementById('geInvitoSi').classList.remove('selected');
@@ -2015,24 +2248,44 @@ function setupDragForGroupBlock(block){
   });
 
   document.getElementById('geSaveBtn').addEventListener('click', ()=>{
-    const members = guests.filter(g=>g.groupId===currentGroupEditId);
-    const applyCategorie = document.getElementById('geApplyCategorie').checked;
-    const applyCitta = document.getElementById('geApplyCitta').checked;
-    const applyCittaConosciuti = document.getElementById('geApplyCittaConosciuti').checked;
-    const applyEta = document.getElementById('geApplyEta').checked;
-    const applyChi = document.getElementById('geApplyChi').checked;
-    const applyImportanza = document.getElementById('geApplyImportanza').checked;
-    const applyRsvp = document.getElementById('geApplyRsvp').checked;
-    const applyInvito = document.getElementById('geApplyInvito').checked;
+    const gr = groups.find(x=>x.id===currentGroupEditId);
+    if(!gr) return;
+    const level = groupLevelOf(gr);
+    const force = document.getElementById('geForceOverride').checked;
+    const directMembers = guests.filter(g=>g.groupId===currentGroupEditId);
+    const subIds = !gr.parentId ? childGroupsOf(gr.id).map(c=>c.id) : [];
+    const members = subIds.length
+      ? [...directMembers, ...guests.filter(g=>subIds.includes(g.groupId))]
+      : directMembers;
+
+    const applyMap = {
+      categorie: document.getElementById('geApplyCategorie').checked,
+      cittaAttuale: document.getElementById('geApplyCitta').checked,
+      cittaConosciuti: document.getElementById('geApplyCittaConosciuti').checked,
+      eta: document.getElementById('geApplyEta').checked,
+      chi: document.getElementById('geApplyChi').checked,
+      importanza: document.getElementById('geApplyImportanza').checked,
+      rsvp: document.getElementById('geApplyRsvp').checked,
+      invitoInviato: document.getElementById('geApplyInvito').checked
+    };
+    const valueOf = {
+      categorie: ()=> geState.categorie.slice(),
+      cittaAttuale: ()=> geState.citta,
+      cittaConosciuti: ()=> geState.cittaConosciuti,
+      eta: ()=> geState.eta,
+      chi: ()=> geState.chi,
+      importanza: ()=> geState.importanza,
+      rsvp: ()=> geState.rsvp,
+      invitoInviato: ()=> geState.invitoInviato
+    };
     members.forEach(g=>{
-      if(applyCategorie) g.categorie = geState.categorie.slice();
-      if(applyCitta) g.cittaAttuale = geState.citta;
-      if(applyCittaConosciuti) g.cittaConosciuti = geState.cittaConosciuti;
-      if(applyEta) g.eta = geState.eta;
-      if(applyChi) g.chi = geState.chi;
-      if(applyImportanza) g.importanza = geState.importanza;
-      if(applyRsvp) g.rsvp = geState.rsvp;
-      if(applyInvito) g.invitoInviato = geState.invitoInviato;
+      BULK_FIELDS.forEach(field=>{
+        if(!applyMap[field]) return;
+        if(canApplyField(g, field, level, force)){
+          g[field] = valueOf[field]();
+          setFieldOrigin(g, field, level);
+        }
+      });
     });
     saveGuests();
     groupEditModalOverlay.classList.remove('active');
