@@ -1,0 +1,17 @@
+{
+  "name": "I Nostri Invitati",
+  "short_name": "Invitati",
+  "description": "Lista degli invitati e organizzazione del matrimonio.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FFF9F3",
+  "theme_color": "#EB1E8C",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

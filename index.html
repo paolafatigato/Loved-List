@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>I Nostri Invitati 💍</title>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#EB1E8C">
+<meta name="description" content="I Nostri Invitati — lista degli invitati e organizzazione del matrimonio.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -25,6 +30,13 @@
   *{box-sizing:border-box;}
   body{margin:0;padding:0;background:var(--cream);color:var(--ink);font-family:'Inter',sans-serif;}
   h1,h2,h3{font-family:'Fraunces',serif;margin:0;}
+
+  .brand{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
+  .brand img{
+    width:56px; height:56px; border-radius:16px; object-fit:cover;
+    background:rgba(255,255,255,0.8); border:1px solid rgba(28,27,31,0.05);
+    box-shadow:0 8px 18px rgba(28,27,31,0.08);
+  }
 
   header.app-head{
     position:relative;
@@ -257,11 +269,15 @@
 .group-block.dragging-group{position:fixed; z-index:200; box-shadow:var(--shadow); opacity:.97;}
 .group-drag-placeholder{border:1.5px dashed var(--magenta); border-radius:var(--radius); background:#FCE4F3; opacity:.4;}
 .group-header{cursor:pointer;}
+.group-chevron{font-size:11px; color:var(--ink-soft); flex-shrink:0; transition:.15s; margin-left:2px;}
+.group-block.expanded .group-chevron{transform:rotate(180deg);}
 .group-toolbar{display:none; gap:8px; margin-bottom:10px;}
 .group-block.expanded .group-toolbar{display:flex;}
+#groupsContainer.selecting .group-toolbar{display:none !important;}
 .group-toolbar .search-box{padding:7px 12px;}
 .group-toolbar .icon-btn{width:36px; height:36px; font-size:16px;}
-  .group-members{min-height:16px; display:flex; flex-direction:column; gap:6px;}
+  .group-members{min-height:16px; display:none; flex-direction:column; gap:6px;}
+  .group-block.expanded .group-members{display:flex;}
   .drag-row{display:flex; align-items:center; gap:8px; background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:8px 10px; touch-action:none; user-select:none;}
   .drag-row.dragging-row{position:fixed; z-index:200; box-shadow:var(--shadow); opacity:.97; background:var(--paper);}
   .drag-handle{cursor:grab; color:var(--ink-soft); font-size:16px; padding:2px 6px; touch-action:none; flex-shrink:0;}
@@ -270,6 +286,12 @@
   .drag-edit-btn{border:none; background:none; cursor:pointer; font-size:14px; color:var(--ink-soft); flex-shrink:0;}
   .drag-placeholder{border:1.5px dashed var(--magenta); border-radius:10px; background:#FCE4F3; opacity:.5;}
   .group-empty-hint{font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:6px 2px;}
+  .select-check{display:flex; align-items:center; padding:2px 6px 2px 2px; flex-shrink:0;}
+  .select-check input{width:18px; height:18px; accent-color:var(--magenta); cursor:pointer;}
+  .group-select-toolbar{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
+  .bulk-move-bar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:14px;}
+  .bulk-move-bar span{font-size:13px; font-weight:700; color:var(--ink); flex:0 0 auto;}
+  .bulk-move-bar select{flex:1; min-width:140px; border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-family:'Inter'; font-size:13.5px; background:var(--cream); color:var(--ink);}
 
   @media print{
     header, nav.tabs, .toolbar, .fab, .summary-strip, .modal-overlay{display:none !important;}
@@ -282,8 +304,13 @@
 
 <header class="app-head">
   <div class="head-inner">
-    <h1>I Nostri Invitati 💍</h1>
-    <p class="sub">our loved ones</p>
+    <div class="brand">
+     
+      <div>
+        <h1>I Nostri Invitati 💍</h1>
+        <p class="sub">our loved ones</p>
+      </div>
+    </div>
     <div class="names-row">
       <div class="name-chip"><span class="dot lei"></span><input id="nomeLei" type="text" value="Io" maxlength="16"></div>
       <div class="name-chip"><span class="dot lui"></span><input id="nomeLui" type="text" value="Lui" maxlength="16"></div>
@@ -319,7 +346,15 @@
   </section>
 
   <section class="view" id="view-gruppi">
-    <p class="hint-text" style="margin-bottom:14px;">Trascina le persone tra i gruppi tenendo premuto il loro ⠿. Trascina l'intero gruppo tenendo premuto il ⠿ nella sua intestazione per riordinare i gruppi. Finché non crei un gruppo, la Lista li mostra in ordine di aggiunta; da qui in poi li mostra nell'ordine dei gruppi.</p>
+    <p class="hint-text" style="margin-bottom:14px;">Tocca l'intestazione di un gruppo per aprirlo o richiuderlo a tendina. Da aperto: trascina le persone tenendo premuto il loro ⠿, cercane una esistente o aggiungine una nuova con +. Trascina l'intestazione con ⠿ per riordinare i gruppi. Usa "Seleziona più persone" per spostarne diverse insieme.</p>
+    <div class="group-select-toolbar">
+      <button class="btn btn-ghost" id="toggleSelectModeBtn" style="flex:0 0 auto;">☑️ Seleziona più persone</button>
+    </div>
+    <div class="bulk-move-bar" id="bulkMoveBar" style="display:none;">
+      <span id="bulkSelCount"></span>
+      <select id="bulkMoveTarget"></select>
+      <button class="btn btn-primary" id="bulkMoveGoBtn" style="flex:0 0 auto;">Sposta</button>
+    </div>
     <div class="add-group-row">
       <input id="newGroupInput" type="text" placeholder="Nome del nuovo gruppo (es. Tavolo 3)">
       <button id="addGroupBtn">Crea gruppo</button>
@@ -412,6 +447,11 @@
       <div class="chip-group" id="fCategorie"></div>
     </div>
 
+    <div class="field">
+      <label>Gruppo</label>
+      <select id="fGroup"><option value="">Nessun gruppo</option></select>
+    </div>
+
     <div class="field two-col">
       <div class="suggest-wrap">
         <label>Città in cui abita ora</label>
@@ -452,6 +492,7 @@
         <label>Porta un +1</label>
         <label class="switch"><input type="checkbox" id="fPlusOneToggle"><span class="slider"></span></label>
       </div>
+      <div class="hint-text">Il/la +1 avrà una scheda propria — stesso gruppo e stesse caratteristiche di partenza — che potrai poi modificare in modo indipendente aprendo la sua scheda dalla Lista.</div>
       <div id="plusOneNameWrap" style="display:none;">
         <div class="chip-group" style="margin-bottom:8px;">
           <div class="chip-option selected" id="plusOneGeneric" data-mode="generico">Lascialo come "+1"</div>
@@ -524,6 +565,13 @@ Marco e Sara (colleghi)"></textarea>
       <div class="suggest-wrap">
         <input type="text" id="geCitta" placeholder="es. Piacenza" autocomplete="off">
         <div class="suggest-box" id="suggestGeCitta"></div>
+      </div>
+    </div>
+    <div class="field">
+      <div class="toggle-row"><label>Città in cui vi siete conosciuti</label><label class="switch"><input type="checkbox" id="geApplyCittaConosciuti"><span class="slider"></span></label></div>
+      <div class="suggest-wrap">
+        <input type="text" id="geCittaConosciuti" placeholder="es. Padova" autocomplete="off">
+        <div class="suggest-box" id="suggestGeCittaConosciuti"></div>
       </div>
     </div>
     <div class="field">
@@ -636,19 +684,31 @@ Marco e Sara (colleghi)"></textarea>
   let editingId = null;
   let formState = null;
 
-  function blankForm(){
+  function blankForm(presetGroupId){
     return {
       categorie: [], eta: 'adulti-noi', chi: 'entrambi', importanza: 2,
       plusOne: false, plusOneMode: 'generico', plusOneNome: '', isPlusOneOf: '',
-      rsvp: 'attesa', invitoInviato: false
+      rsvp: 'attesa', invitoInviato: false, groupId: presetGroupId || ''
     };
   }
 
   function renderRelationSelect(){
     const sel = document.getElementById('fIsPlusOneOf');
-    const options = guests.filter(g=> g.id!==editingId && !g.isPlusOneOf).sort((a,b)=>a.nome.localeCompare(b.nome));
+    const options = guests.filter(g=>{
+      if(g.id===editingId) return false;
+      if(g.isPlusOneOf) return false;
+      const existingChild = guests.find(x=>x.isPlusOneOf===g.id);
+      if(existingChild && existingChild.id!==editingId) return false;
+      return true;
+    }).sort((a,b)=>a.nome.localeCompare(b.nome));
     sel.innerHTML = '<option value="">Nessuno — invitato indipendente</option>' + options.map(g=>`<option value="${g.id}">${g.nome}</option>`).join('');
     sel.value = formState.isPlusOneOf || '';
+  }
+
+  function renderGroupSelect(){
+    const sel = document.getElementById('fGroup');
+    sel.innerHTML = '<option value="">Nessun gruppo</option>' + groups.map(gr=>`<option value="${gr.id}">${gr.nome}</option>`).join('');
+    sel.value = formState.groupId || '';
   }
 
   function syncRelationExclusivity(){
@@ -656,17 +716,23 @@ Marco e Sara (colleghi)"></textarea>
     document.getElementById('relationField').style.display = formState.plusOne ? 'none' : 'block';
   }
 
-  function openModal(guest){
+  function openModal(guest, presetGroupId){
     editingId = guest ? guest.id : null;
     document.getElementById('modalTitle').textContent = guest ? 'Modifica invitato' : 'Nuovo invitato';
     deleteBtn.style.display = guest ? 'block' : 'none';
 
     if(guest){
+      const linkedPO = guests.find(x=>x.isPlusOneOf===guest.id);
+      const defaultName = '+1 di ' + guest.nome;
+      const linkedIsNamed = linkedPO && linkedPO.nome !== defaultName;
       formState = {
         categorie: guest.categorie.slice(), eta: guest.eta, chi: guest.chi, importanza: guest.importanza,
-        plusOne: guest.plusOne, plusOneMode: guest.plusOneNome ? 'nome':'generico', plusOneNome: guest.plusOneNome || '',
+        plusOne: guest.plusOne || !!linkedPO,
+        plusOneMode: linkedPO ? (linkedIsNamed ? 'nome' : 'generico') : (guest.plusOneNome ? 'nome':'generico'),
+        plusOneNome: linkedPO ? (linkedIsNamed ? linkedPO.nome : '') : (guest.plusOneNome || ''),
         isPlusOneOf: guest.isPlusOneOf || '',
-        rsvp: guest.rsvp, invitoInviato: guest.invitoInviato
+        rsvp: guest.rsvp, invitoInviato: guest.invitoInviato,
+        groupId: guest.groupId || ''
       };
       document.getElementById('fNome').value = guest.nome;
       document.getElementById('fCittaAttuale').value = guest.cittaAttuale || '';
@@ -674,7 +740,7 @@ Marco e Sara (colleghi)"></textarea>
       document.getElementById('fAllergie').value = guest.allergie || '';
       document.getElementById('fNote').value = guest.note || '';
     } else {
-      formState = blankForm();
+      formState = blankForm(presetGroupId);
       document.getElementById('fNome').value = '';
       document.getElementById('fCittaAttuale').value = '';
       document.getElementById('fCittaConosciuti').value = '';
@@ -688,12 +754,13 @@ Marco e Sara (colleghi)"></textarea>
     document.getElementById('fInvitoInviato').checked = formState.invitoInviato;
 
     renderRelationSelect();
+    renderGroupSelect();
     syncRelationExclusivity();
     renderFormChips();
     modalOverlay.classList.add('active');
   }
-  function closeModalFn(){ modalOverlay.classList.remove('active'); editingId=null; formState=null; pendingGroupId=null; }
-  fabAdd.addEventListener('click', ()=>{ pendingGroupId=null; openModal(null); });
+  function closeModalFn(){ modalOverlay.classList.remove('active'); editingId=null; formState=null; }
+  fabAdd.addEventListener('click', ()=>{ openModal(null); });
   closeModal.addEventListener('click', closeModalFn);
   cancelBtn.addEventListener('click', closeModalFn);
   modalOverlay.addEventListener('click', (e)=>{ if(e.target===modalOverlay) closeModalFn(); });
@@ -786,6 +853,7 @@ Marco e Sara (colleghi)"></textarea>
     document.getElementById('fPlusOneNome').style.display='block';
   });
   document.getElementById('fInvitoInviato').addEventListener('change', e=>{ formState.invitoInviato = e.target.checked; });
+  document.getElementById('fGroup').addEventListener('change', e=>{ formState.groupId = e.target.value; });
   document.getElementById('fIsPlusOneOf').addEventListener('change', (e)=>{
     formState.isPlusOneOf = e.target.value;
     if(formState.isPlusOneOf){
@@ -800,6 +868,25 @@ Marco e Sara (colleghi)"></textarea>
     const nome = document.getElementById('fNome').value.trim();
     if(!nome){ alert('Serve almeno un nome!'); return; }
     const existingGuest = editingId ? guests.find(g=>g.id===editingId) : null;
+    const existingLinked = editingId ? guests.find(x=>x.isPlusOneOf===editingId) : null;
+
+    if(existingLinked && !formState.plusOne){
+      const ok = confirm(`"${existingLinked.nome}" ha una scheda propria come +1. Disattivando, la sua scheda verrà eliminata insieme ai suoi dati. Continuare?`);
+      if(!ok){
+        formState.plusOne = true;
+        document.getElementById('fPlusOneToggle').checked = true;
+        document.getElementById('plusOneNameWrap').style.display = 'block';
+      }
+    }
+    const willDeleteLinked = !!(existingLinked && !formState.plusOne);
+
+    const chosenGroupId = formState.groupId || '';
+    const prevGroupId = existingGuest ? (existingGuest.groupId || '') : null;
+    const groupChanged = prevGroupId===null || prevGroupId!==chosenGroupId;
+    const order = groupChanged
+      ? guests.filter(g=> (g.groupId||'')===chosenGroupId && g.id!==editingId).length
+      : (existingGuest.order || 0);
+
     const data = {
       id: editingId || uid(),
       nome,
@@ -816,8 +903,8 @@ Marco e Sara (colleghi)"></textarea>
       invitoInviato: formState.invitoInviato,
       allergie: document.getElementById('fAllergie').value.trim(),
       note: document.getElementById('fNote').value.trim(),
-      groupId: existingGuest ? (existingGuest.groupId || '') : (pendingGroupId || ''),
-      order: existingGuest ? (existingGuest.order || 0) : (pendingGroupId ? guests.filter(g=>g.groupId===pendingGroupId).length : guests.filter(g=>!g.groupId).length)
+      groupId: chosenGroupId,
+      order
     };
     if(editingId){
       const idx = guests.findIndex(g=>g.id===editingId);
@@ -825,6 +912,36 @@ Marco e Sara (colleghi)"></textarea>
     } else {
       guests.push(data);
     }
+
+    if(willDeleteLinked){
+      guests = guests.filter(g=>g.id!==existingLinked.id);
+    } else if(data.plusOne && !data.isPlusOneOf){
+      let linked = guests.find(x=>x.isPlusOneOf===data.id);
+      const typedName = (formState.plusOneMode==='nome') ? document.getElementById('fPlusOneNome').value.trim() : '';
+      if(!linked){
+        linked = {
+          id: uid(),
+          nome: typedName || ('+1 di ' + data.nome),
+          categorie: data.categorie.slice(),
+          cittaAttuale: data.cittaAttuale,
+          cittaConosciuti: data.cittaConosciuti,
+          eta: data.eta,
+          chi: data.chi,
+          importanza: data.importanza,
+          plusOne: false, plusOneNome: '',
+          isPlusOneOf: data.id,
+          rsvp: data.rsvp,
+          invitoInviato: data.invitoInviato,
+          allergie: '', note: '',
+          groupId: data.groupId,
+          order: data.order + 0.5
+        };
+        guests.push(linked);
+      } else if(typedName && typedName !== linked.nome){
+        linked.nome = typedName;
+      }
+    }
+
     saveGuests();
     closeModalFn();
     renderAll();
@@ -1034,6 +1151,8 @@ Marco e Sara (colleghi)"></textarea>
 
   /* ---------------- GRUPPI ---------------- */
   let expandedGroupId = null;
+  let selectionMode = false;
+  let selectedGuestIds = new Set();
   let pendingGroupId = null;
 
   function assignGuestToGroup(guestId, groupId){
@@ -1061,6 +1180,13 @@ Marco e Sara (colleghi)"></textarea>
   function dragRowHtml(g){
     const linked = getLinkedPlusOne(g.id);
     const plusSmall = linked ? (' +1: '+linked.nome) : (g.plusOne ? (' +1'+(g.plusOneNome?': '+g.plusOneNome:'')) : '');
+    if(selectionMode){
+      const checked = selectedGuestIds.has(g.id) ? 'checked' : '';
+      return `<div class="drag-row selectable" data-guest-id="${g.id}">
+        <label class="select-check"><input type="checkbox" class="row-select-cb" data-guest-id="${g.id}" ${checked}></label>
+        <span class="drag-name">${g.nome}<span class="small">${plusSmall}</span></span>
+      </div>`;
+    }
     return `<div class="drag-row" data-guest-id="${g.id}">
       <span class="drag-handle">⠿</span>
       <span class="drag-name">${g.nome}<span class="small">${plusSmall}</span></span>
@@ -1068,17 +1194,32 @@ Marco e Sara (colleghi)"></textarea>
     </div>`;
   }
 
+  function updateBulkMoveBar(){
+    const bar = document.getElementById('bulkMoveBar');
+    if(!selectionMode || selectedGuestIds.size===0){ bar.style.display='none'; return; }
+    bar.style.display='flex';
+    document.getElementById('bulkSelCount').textContent = `${selectedGuestIds.size} selezionat${selectedGuestIds.size===1?'o':'i'}`;
+    const sel = document.getElementById('bulkMoveTarget');
+    const prevVal = sel.value;
+    sel.innerHTML = '<option value="" disabled selected>Sposta in...</option>'
+      + '<option value="__none__">Senza gruppo</option>'
+      + groups.map(gr=>`<option value="${gr.id}">${gr.nome}</option>`).join('');
+    if(prevVal && [...sel.options].some(o=>o.value===prevVal)) sel.value = prevVal;
+  }
+
   function renderGruppiTab(){
     const container = document.getElementById('groupsContainer');
+    container.classList.toggle('selecting', selectionMode);
     let html = '';
     groups.forEach(gr=>{
       const members = guests.filter(g=>g.groupId===gr.id).sort((a,b)=>(a.order||0)-(b.order||0));
-      const isExpanded = gr.id === expandedGroupId;
+      const isExpanded = selectionMode || gr.id === expandedGroupId;
       html += `
       <div class="group-block${isExpanded?' expanded':''}" data-group-id="${gr.id}">
         <div class="group-header">
             <span class="group-drag-handle" title="Trascina per riordinare i gruppi">⠿</span>
           <input class="group-name-input" value="${gr.nome}" data-group-id="${gr.id}">
+          <span class="group-chevron">▾</span>
           <span class="group-count">${members.length} person${members.length===1?'a':'e'}</span>
           <div class="group-actions">
             <button class="group-mini-btn ge-edit" data-group-id="${gr.id}" title="Modifica gruppo">✏️</button>
@@ -1090,7 +1231,7 @@ Marco e Sara (colleghi)"></textarea>
             <div class="search-box">🔍<input class="group-search-input" type="text" placeholder="Cerca un invitato esistente..." data-group-id="${gr.id}" autocomplete="off"></div>
             <div class="suggest-box" data-group-id="${gr.id}"></div>
           </div>
-          <button class="icon-btn group-add-btn" data-group-id="${gr.id}" title="Aggiungi nuovo invitato qui">+</button>
+          <button class="icon-btn group-add-btn" data-group-id="${gr.id}" title="Aggiungi nuovo invitato direttamente qui">+</button>
         </div>
         <div class="group-members" data-group-id="${gr.id}">
           ${members.length ? members.map(g=>dragRowHtml(g)).join('') : '<div class="group-empty-hint">Trascina qui un invitato per aggiungerlo.</div>'}
@@ -1098,10 +1239,12 @@ Marco e Sara (colleghi)"></textarea>
       </div>`;
     });
     const ungrouped = guests.filter(g=>!g.groupId).sort((a,b)=>(a.order||0)-(b.order||0));
+    const ungroupedExpanded = selectionMode || expandedGroupId==='';
     html += `
-    <div class="group-block" data-group-id="">
+    <div class="group-block${ungroupedExpanded?' expanded':''}" data-group-id="">
       <div class="group-header">
         <span class="group-title-static">Senza gruppo</span>
+        <span class="group-chevron">▾</span>
         <span class="group-count">${ungrouped.length} person${ungrouped.length===1?'a':'e'}</span>
       </div>
       <div class="group-members" data-group-id="">
@@ -1110,26 +1253,38 @@ Marco e Sara (colleghi)"></textarea>
     </div>`;
     container.innerHTML = html;
 
-    container.querySelectorAll('.drag-row').forEach(row=> setupDragForRow(row));
+    if(selectionMode){
+      container.querySelectorAll('.row-select-cb').forEach(cb=>{
+        cb.addEventListener('change', ()=>{
+          if(cb.checked) selectedGuestIds.add(cb.dataset.guestId); else selectedGuestIds.delete(cb.dataset.guestId);
+          updateBulkMoveBar();
+        });
+      });
+    } else {
+      container.querySelectorAll('.drag-row').forEach(row=> setupDragForRow(row));
+      container.querySelectorAll('.drag-edit-btn').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{ e.stopPropagation(); const g=guests.find(x=>x.id===btn.dataset.guestId); if(g) openModal(g); });
+      });
+    }
     container.querySelectorAll('.group-block').forEach(block=> setupDragForGroupBlock(block));
-    container.querySelectorAll('.drag-edit-btn').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{ e.stopPropagation(); const g=guests.find(x=>x.id===btn.dataset.guestId); if(g) openModal(g); });
-    });
     container.querySelectorAll('.group-name-input').forEach(inp=>{
       inp.addEventListener('change', ()=>{
         const gr = groups.find(x=>x.id===inp.dataset.groupId);
         if(gr){ gr.nome = inp.value.trim() || gr.nome; saveGroups(); renderGruppiTab(); renderAll(); }
       });
     });
-    container.querySelectorAll('.group-block[data-group-id]').forEach(block=>{
+    container.querySelectorAll('.group-block').forEach(block=>{
       const gid = block.dataset.groupId;
-      if(!gid) return;
       const header = block.querySelector('.group-header');
       header.addEventListener('click', (e)=>{
         if(e.target.closest('input, button, .group-drag-handle')) return;
+        if(selectionMode) return;
         expandedGroupId = (expandedGroupId===gid) ? null : gid;
         renderGruppiTab();
       });
+    });
+    container.querySelectorAll('.group-add-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{ e.stopPropagation(); openModal(null, btn.dataset.groupId); });
     });
     container.querySelectorAll('.group-search-input').forEach(inp=>{
       const gid = inp.dataset.groupId;
@@ -1163,7 +1318,30 @@ Marco e Sara (colleghi)"></textarea>
     });
     container.querySelectorAll('.ge-edit').forEach(btn=> btn.addEventListener('click', ()=>openGroupEditModal(btn.dataset.groupId)));
     container.querySelectorAll('.ge-del').forEach(btn=> btn.addEventListener('click', ()=>deleteGroup(btn.dataset.groupId)));
+    updateBulkMoveBar();
   }
+
+  document.getElementById('toggleSelectModeBtn').addEventListener('click', ()=>{
+    selectionMode = !selectionMode;
+    if(!selectionMode) selectedGuestIds.clear();
+    document.getElementById('toggleSelectModeBtn').textContent = selectionMode ? 'Annulla selezione' : '☑️ Seleziona più persone';
+    renderGruppiTab();
+  });
+
+  document.getElementById('bulkMoveGoBtn').addEventListener('click', ()=>{
+    const target = document.getElementById('bulkMoveTarget').value;
+    if(!target || selectedGuestIds.size===0) return;
+    const groupId = target==='__none__' ? '' : target;
+    let nextOrder = guests.filter(g=>(g.groupId||'')===groupId).length;
+    selectedGuestIds.forEach(id=>{
+      const g = guests.find(x=>x.id===id);
+      if(g){ g.groupId = groupId; g.order = nextOrder++; }
+    });
+    saveGuests();
+    selectedGuestIds.clear();
+    renderGruppiTab();
+    renderAll();
+  });
 
   function deleteGroup(gid){
     const gr = groups.find(x=>x.id===gid);
@@ -1309,11 +1487,12 @@ function setupDragForGroupBlock(block){
     if(!gr) return;
     currentGroupEditId = gid;
     document.getElementById('groupEditTitle').textContent = 'Modifica gruppo: ' + gr.nome;
-    geState = {categorie:[], citta:'', eta:'adulti-noi', chi:'entrambi', importanza:2, rsvp:'attesa', invitoInviato:false};
-    ['geApplyCategorie','geApplyCitta','geApplyEta','geApplyChi','geApplyImportanza','geApplyRsvp','geApplyInvito'].forEach(id=>{
+    geState = {categorie:[], citta:'', cittaConosciuti:'', eta:'adulti-noi', chi:'entrambi', importanza:2, rsvp:'attesa', invitoInviato:false};
+    ['geApplyCategorie','geApplyCitta','geApplyCittaConosciuti','geApplyEta','geApplyChi','geApplyImportanza','geApplyRsvp','geApplyInvito'].forEach(id=>{
       document.getElementById(id).checked = false;
     });
     document.getElementById('geCitta').value = '';
+    document.getElementById('geCittaConosciuti').value = '';
     document.getElementById('geInvitoSi').classList.remove('selected');
     document.getElementById('geInvitoNo').classList.add('selected');
     renderGroupEditChips();
@@ -1372,6 +1551,10 @@ function setupDragForGroupBlock(block){
     geState.citta = document.getElementById('geCitta').value;
     document.getElementById('geApplyCitta').checked = true;
   });
+  document.getElementById('geCittaConosciuti').addEventListener('input', ()=>{
+    geState.cittaConosciuti = document.getElementById('geCittaConosciuti').value;
+    document.getElementById('geApplyCittaConosciuti').checked = true;
+  });
 
   document.getElementById('geInvitoSi').addEventListener('click', ()=>{
     geState.invitoInviato = true;
@@ -1390,6 +1573,7 @@ function setupDragForGroupBlock(block){
     const members = guests.filter(g=>g.groupId===currentGroupEditId);
     const applyCategorie = document.getElementById('geApplyCategorie').checked;
     const applyCitta = document.getElementById('geApplyCitta').checked;
+    const applyCittaConosciuti = document.getElementById('geApplyCittaConosciuti').checked;
     const applyEta = document.getElementById('geApplyEta').checked;
     const applyChi = document.getElementById('geApplyChi').checked;
     const applyImportanza = document.getElementById('geApplyImportanza').checked;
@@ -1398,6 +1582,7 @@ function setupDragForGroupBlock(block){
     members.forEach(g=>{
       if(applyCategorie) g.categorie = geState.categorie.slice();
       if(applyCitta) g.cittaAttuale = geState.citta;
+      if(applyCittaConosciuti) g.cittaConosciuti = geState.cittaConosciuti;
       if(applyEta) g.eta = geState.eta;
       if(applyChi) g.chi = geState.chi;
       if(applyImportanza) g.importanza = geState.importanza;
@@ -1529,6 +1714,7 @@ function setupDragForGroupBlock(block){
   attachCitySuggest('fCittaAttuale','suggestCittaAttuale','cittaAttuale');
   attachCitySuggest('fCittaConosciuti','suggestCittaConosciuti','cittaConosciuti');
   attachCitySuggest('geCitta','suggestGeCitta','cittaAttuale');
+  attachCitySuggest('geCittaConosciuti','suggestGeCittaConosciuti','cittaConosciuti');
 
   const bulkModalOverlay = document.getElementById('bulkModalOverlay');
   document.getElementById('bulkImportBtn').addEventListener('click', ()=>{
