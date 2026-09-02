@@ -339,10 +339,10 @@
 
   .gruppi-sidebar{
     display:none; flex-direction:column;
-    position:relative; width:240px; flex-shrink:0;
-    max-height:calc(100vh - 80px); overflow-y:auto;
+    position:sticky; top:64px; width:240px; flex-shrink:0;
+    max-height:calc(100vh - 84px); overflow-y:auto;
     background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
-    padding:14px; box-shadow:var(--shadow); z-index:15; margin-top:18px; margin-right:20px;
+    padding:14px; box-shadow:var(--shadow); z-index:15; margin-top:18px;
   }
   @media(min-width:1280px){
     .gruppi-sidebar.active{display:flex;}
@@ -350,13 +350,13 @@
     
     body {
       display: grid;
-      grid-template-columns: 240px 1fr;
+      grid-template-columns: minmax(24px,1fr) 240px 24px 760px minmax(24px,1fr);
       grid-template-rows: auto auto auto 1fr;
     }
     header.app-head { grid-column: 1 / -1; grid-row: 1; }
     nav.tabs { grid-column: 1 / -1; grid-row: 2; }
-    aside.gruppi-sidebar.active { grid-column: 1; grid-row: 3; }
-    main { grid-column: 2; grid-row: 3; padding: 18px 16px 100px; }
+    aside.gruppi-sidebar.active { grid-column: 2; grid-row: 3; }
+    main { grid-column: 4; grid-row: 3; padding: 18px 16px 100px; }
   }
   .gruppi-sidebar-toolbar{display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; flex-shrink:0;}
   .gruppi-sidebar-toolbar button{
