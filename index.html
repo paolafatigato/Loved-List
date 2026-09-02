@@ -12,6 +12,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  .auth-overlay{position:fixed; inset:0; background:var(--cream); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px;}
+  .auth-overlay.hidden{display:none;}
+  .auth-card{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:28px 24px; width:100%; max-width:380px; box-shadow:var(--shadow);}
+  .auth-card h1{font-size:22px; margin-bottom:6px;}
+  .auth-card p.sub{font-size:13.5px; color:var(--ink-soft); margin:0 0 22px; font-family:'Fraunces',serif; font-style:italic;}
+  .btn-google{width:100%; display:flex; align-items:center; justify-content:center; gap:10px; border:1.5px solid var(--line); background:var(--paper); color:var(--ink); border-radius:100px; padding:12px 16px; font-family:'Inter'; font-weight:700; font-size:14px; cursor:pointer; margin-bottom:18px;}
+  .auth-divider{display:flex; align-items:center; gap:10px; margin:0 0 16px; font-size:12px; color:var(--ink-soft);}
+  .auth-divider::before, .auth-divider::after{content:""; flex:1; height:1px; background:var(--line);}
+  .auth-card .field{margin-bottom:12px;}
+  .auth-card input{width:100%; border:1px solid var(--line); background:var(--cream); border-radius:10px; padding:11px 13px; font-family:'Inter'; font-size:14.5px; outline:none; color:var(--ink);}
+  .auth-error{font-size:12.5px; color:#B23A3A; min-height:16px; margin-bottom:4px;}
+  .auth-forgot{width:100%; background:none; border:none; color:var(--ink-soft); font-size:12.5px; text-decoration:underline; cursor:pointer; margin-top:14px;}
+  .account-bar{display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; color:var(--ink-soft); flex-wrap:wrap;}
+  .account-bar button{border:1px solid var(--line); background:rgba(255,255,255,0.75); border-radius:100px; padding:5px 12px; font-size:12px; font-weight:600; cursor:pointer; color:var(--ink-soft);}
   :root{
     --magenta:#EB1E8C;
     --orange:#FF8A3D;
@@ -273,7 +287,6 @@
 .group-block.expanded .group-chevron{transform:rotate(180deg);}
 .group-toolbar{display:none; gap:8px; margin-bottom:10px;}
 .group-block.expanded .group-toolbar{display:flex;}
-#groupsContainer.selecting .group-toolbar{display:none !important;}
 .group-toolbar .search-box{padding:7px 12px;}
 .group-toolbar .icon-btn{width:36px; height:36px; font-size:16px;}
   .group-members{min-height:16px; display:none; flex-direction:column; gap:6px;}
@@ -286,12 +299,44 @@
   .drag-edit-btn{border:none; background:none; cursor:pointer; font-size:14px; color:var(--ink-soft); flex-shrink:0;}
   .drag-placeholder{border:1.5px dashed var(--magenta); border-radius:10px; background:#FCE4F3; opacity:.5;}
   .group-empty-hint{font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:6px 2px;}
-  .select-check{display:flex; align-items:center; padding:2px 6px 2px 2px; flex-shrink:0;}
+  .select-check{display:flex; align-items:center; padding:2px 4px 2px 2px; flex-shrink:0;}
   .select-check input{width:18px; height:18px; accent-color:var(--magenta); cursor:pointer;}
   .group-select-toolbar{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
-  .bulk-move-bar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:14px;}
+  .bulk-move-bar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:14px;}
   .bulk-move-bar span{font-size:13px; font-weight:700; color:var(--ink); flex:0 0 auto;}
-  .bulk-move-bar select{flex:1; min-width:140px; border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-family:'Inter'; font-size:13.5px; background:var(--cream); color:var(--ink);}
+
+  .gruppi-sidebar{
+    display:none; flex-direction:column;
+    position:fixed; top:130px; left:calc(50% - 640px); width:240px;
+    max-height:calc(100vh - 150px);
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px; box-shadow:var(--shadow); z-index:15;
+  }
+  @media(min-width:1280px){
+    .gruppi-sidebar.active{display:flex;}
+    .group-select-toolbar, #deselectBar{display:none !important;}
+  }
+  .gruppi-sidebar-toolbar{display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; flex-shrink:0;}
+  .gruppi-sidebar-toolbar button{
+    border:1px solid var(--line); background:var(--cream); border-radius:100px;
+    padding:6px 10px; font-size:12px; font-weight:700; cursor:pointer; color:var(--ink-soft);
+    display:flex; align-items:center; gap:4px; white-space:nowrap;
+  }
+  .gruppi-sidebar-toolbar button:hover{background:var(--line-soft);}
+  .gruppi-sidebar-title{font-family:'Fraunces',serif; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:10px; text-transform:uppercase; letter-spacing:.03em; flex-shrink:0;}
+  .gruppi-sidebar-list{display:flex; flex-direction:column; gap:4px; overflow-y:auto; flex:1; min-height:0;}
+  .sidebar-item{
+    display:flex; align-items:center; gap:8px; padding:8px; border-radius:10px;
+    cursor:pointer; font-size:13px; color:var(--ink);
+  }
+  .sidebar-item:hover{background:var(--line-soft);}
+  .sidebar-item-ungrouped{color:var(--ink-soft); font-style:italic; cursor:default;}
+  .sidebar-item-ungrouped:hover{background:none;}
+  .sidebar-drag-handle{cursor:grab; color:var(--ink-soft); font-size:14px; flex-shrink:0; touch-action:none; user-select:none;}
+  .sidebar-item-name{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .sidebar-item-count{font-size:11px; color:var(--ink-soft); flex-shrink:0;}
+  .sidebar-item.sidebar-dragging{position:fixed; z-index:200; box-shadow:var(--shadow); opacity:.97; background:var(--paper); border:1px solid var(--line);}
+  .sidebar-drag-placeholder{border:1.5px dashed var(--magenta); border-radius:10px; background:#FCE4F3; opacity:.5; margin:2px 0;}
 
   @media print{
     header, nav.tabs, .toolbar, .fab, .summary-strip, .modal-overlay{display:none !important;}
@@ -301,6 +346,33 @@
 </style>
 </head>
 <body>
+
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <h1>I Nostri Invitati 💍</h1>
+    <p class="sub">Accedi per vedere e modificare la lista da qualsiasi dispositivo.</p>
+
+    <button class="btn-google" id="googleSignInBtn" type="button">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.4 0 10.3-2.1 14-5.4l-6.5-5.5c-2 1.4-4.6 2.3-7.5 2.3-5.3 0-9.7-3.1-11.3-7.6l-6.6 5.1C9.5 39.7 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.7l6.5 5.5C41.5 36.5 44 30.9 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+      Accedi con Google
+    </button>
+
+    <div class="auth-divider"><span>oppure con l'email</span></div>
+
+    <div class="field">
+      <input type="email" id="authEmail" placeholder="La tua email" autocomplete="email">
+    </div>
+    <div class="field">
+      <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="authRegisterBtn" type="button">Registrati</button>
+      <button class="btn btn-primary" id="authLoginBtn" type="button">Accedi</button>
+    </div>
+    <button class="auth-forgot" id="authForgotBtn" type="button">Password dimenticata?</button>
+  </div>
+</div>
 
 <header class="app-head">
   <div class="head-inner">
@@ -314,6 +386,10 @@
     <div class="names-row">
       <div class="name-chip"><span class="dot lei"></span><input id="nomeLei" type="text" value="Io" maxlength="16"></div>
       <div class="name-chip"><span class="dot lui"></span><input id="nomeLui" type="text" value="Lui" maxlength="16"></div>
+    </div>
+    <div class="account-bar" id="accountBar" style="display:none;">
+      <span id="accountEmail"></span>
+      <button id="logoutBtn" type="button" title="Esci">Esci</button>
     </div>
   </div>
 </header>
@@ -346,14 +422,14 @@
   </section>
 
   <section class="view" id="view-gruppi">
-    <p class="hint-text" style="margin-bottom:14px;">Tocca l'intestazione di un gruppo per aprirlo o richiuderlo a tendina. Da aperto: trascina le persone tenendo premuto il loro ⠿, cercane una esistente o aggiungine una nuova con +. Trascina l'intestazione con ⠿ per riordinare i gruppi. Usa "Seleziona più persone" per spostarne diverse insieme.</p>
+    <p class="hint-text" style="margin-bottom:14px;">Tocca l'intestazione di un gruppo per aprirlo o richiuderlo a tendina, oppure usa "Apri tutti" / "Chiudi tutti". Accanto a ogni nome trovi la spunta per selezionarlo e il ⠿ per trascinarlo. Se trascini una persona selezionata, si sposta tutta la selezione insieme. Trascina l'intestazione di un gruppo dal suo ⠿ per riordinare i gruppi.</p>
     <div class="group-select-toolbar">
-      <button class="btn btn-ghost" id="toggleSelectModeBtn" style="flex:0 0 auto;">☑️ Seleziona più persone</button>
+      <button class="btn btn-ghost" id="expandAllBtn" style="flex:0 0 auto;">▾ Apri tutti</button>
+      <button class="btn btn-ghost" id="collapseAllBtn" style="flex:0 0 auto;">▸ Chiudi tutti</button>
     </div>
-    <div class="bulk-move-bar" id="bulkMoveBar" style="display:none;">
+    <div class="bulk-move-bar" id="deselectBar" style="display:none;">
       <span id="bulkSelCount"></span>
-      <select id="bulkMoveTarget"></select>
-      <button class="btn btn-primary" id="bulkMoveGoBtn" style="flex:0 0 auto;">Sposta</button>
+      <button class="btn btn-ghost" id="deselectAllBtn" style="flex:0 0 auto;">Deseleziona tutti</button>
     </div>
     <div class="add-group-row">
       <input id="newGroupInput" type="text" placeholder="Nome del nuovo gruppo (es. Tavolo 3)">
@@ -430,6 +506,17 @@
   </section>
 
 </main>
+
+<aside class="gruppi-sidebar" id="gruppiSidebar">
+  <div class="gruppi-sidebar-toolbar">
+    <button id="scrollTopBtn" type="button" title="Torna in cima">↑</button>
+    <button id="expandAllBtnDesktop" type="button" title="Apri tutti">▾</button>
+    <button id="collapseAllBtnDesktop" type="button" title="Chiudi tutti">▸</button>
+    <button id="deselectAllBtnDesktop" type="button" title="Deseleziona tutti" style="display:none;">✕ Deseleziona (<span id="sidebarSelCount">0</span>)</button>
+  </div>
+  <div class="gruppi-sidebar-title">Indice gruppi</div>
+  <div class="gruppi-sidebar-list" id="gruppiSidebarList"></div>
+</aside>
 
 <button class="fab" id="fabAdd">+</button>
 
@@ -606,6 +693,9 @@ Marco e Sara (colleghi)"></textarea>
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script>
 (function(){
   "use strict";
@@ -614,6 +704,20 @@ Marco e Sara (colleghi)"></textarea>
   const CAT_KEY = 'matrimonio-categorie-v1';
   const SETTINGS_KEY = 'matrimonio-settings-v1';
   const GROUPS_KEY = 'matrimonio-gruppi-v1';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBCrH505-KA2mdxdCyJwoSfk6TLe9X5V10",
+    authDomain: "loved-list.firebaseapp.com",
+    projectId: "loved-list",
+    storageBucket: "loved-list.firebasestorage.app",
+    messagingSenderId: "556437907246",
+    appId: "1:556437907246:web:9c72fbb48d15e12ce3fcbf"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const weddingDocRef = db.doc('matrimoni/principale');
+  let unsubscribeSnapshot = null;
 
   const ETA_OPTIONS = [
     {id:'neonati', label:'Neonati'},
@@ -641,11 +745,51 @@ Marco e Sara (colleghi)"></textarea>
   let settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null') || {nomeLei:'Io', nomeLui:'Lui'};
   let groups = JSON.parse(localStorage.getItem(GROUPS_KEY) || '[]');
 
-  function saveGuests(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(guests)); }
-  function saveCategorie(){ localStorage.setItem(CAT_KEY, JSON.stringify(categorie)); }
-  function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
-  function saveGroups(){ localStorage.setItem(GROUPS_KEY, JSON.stringify(groups)); }
+  function saveGuests(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(guests)); syncToFirestore(); }
+  function saveCategorie(){ localStorage.setItem(CAT_KEY, JSON.stringify(categorie)); syncToFirestore(); }
+  function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); syncToFirestore(); }
+  function saveGroups(){ localStorage.setItem(GROUPS_KEY, JSON.stringify(groups)); syncToFirestore(); }
   function uid(){ return 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function syncToFirestore(){
+    if(!auth.currentUser) return;
+    weddingDocRef.set({
+      guests, categorie, settings, groups,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge:true}).catch(err=> console.error('Errore salvataggio su Firestore:', err));
+  }
+
+  function applyRemoteData(data){
+    guests = data.guests || [];
+    categorie = data.categorie || DEFAULT_CATEGORIE.slice();
+    settings = data.settings || {nomeLei:'Io', nomeLui:'Lui'};
+    groups = data.groups || [];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(guests));
+    localStorage.setItem(CAT_KEY, JSON.stringify(categorie));
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    localStorage.setItem(GROUPS_KEY, JSON.stringify(groups));
+    nomeLeiInput.value = settings.nomeLei;
+    nomeLuiInput.value = settings.nomeLui;
+    renderAll();
+    if(document.getElementById('view-gruppi').classList.contains('active')) renderGruppiTab();
+    if(document.getElementById('view-categorie').classList.contains('active')) renderCategorieTab();
+    if(document.getElementById('view-statistiche').classList.contains('active')) renderStats();
+  }
+
+  function attachFirestoreSync(){
+    if(unsubscribeSnapshot) return;
+    unsubscribeSnapshot = weddingDocRef.onSnapshot(snap=>{
+      if(snap.metadata.hasPendingWrites) return;
+      if(snap.exists){
+        applyRemoteData(snap.data());
+      } else {
+        syncToFirestore();
+      }
+    }, err=> console.error('Errore di sincronizzazione Firestore:', err));
+  }
+  function detachFirestoreSync(){
+    if(unsubscribeSnapshot){ unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+  }
 
   function isLinkedElsewhere(id){ return guests.some(g=>g.isPlusOneOf===id); }
   function getLinkedPlusOne(id){ return guests.find(g=>g.isPlusOneOf===id); }
@@ -656,6 +800,68 @@ Marco e Sara (colleghi)"></textarea>
   nomeLuiInput.value = settings.nomeLui;
   nomeLeiInput.addEventListener('change', ()=>{ settings.nomeLei = nomeLeiInput.value || 'Io'; saveSettings(); renderAll(); });
   nomeLuiInput.addEventListener('change', ()=>{ settings.nomeLui = nomeLuiInput.value || 'Lui'; saveSettings(); renderAll(); });
+
+  const authOverlay = document.getElementById('authOverlay');
+  const authError = document.getElementById('authError');
+
+  function showAuthError(msg, ok){
+    authError.style.color = ok ? '#2A7A44' : '#B23A3A';
+    authError.textContent = msg;
+  }
+  function traduciErroreAuth(err){
+    const map = {
+      'auth/invalid-email': 'Email non valida.',
+      'auth/user-not-found': 'Nessun account con questa email.',
+      'auth/wrong-password': 'Password errata.',
+      'auth/email-already-in-use': 'Esiste già un account con questa email — prova ad accedere.',
+      'auth/weak-password': 'Password troppo debole (minimo 6 caratteri).',
+      'auth/popup-closed-by-user': 'Accesso con Google annullato.',
+      'auth/invalid-credential': 'Email o password non corrette.'
+    };
+    return map[err.code] || ('Errore: ' + err.message);
+  }
+
+  auth.onAuthStateChanged(user=>{
+    if(user){
+      authOverlay.classList.add('hidden');
+      document.getElementById('accountBar').style.display = 'flex';
+      document.getElementById('accountEmail').textContent = user.email || user.displayName || '';
+      attachFirestoreSync();
+    } else {
+      authOverlay.classList.remove('hidden');
+      document.getElementById('accountBar').style.display = 'none';
+      detachFirestoreSync();
+    }
+  });
+
+  document.getElementById('googleSignInBtn').addEventListener('click', ()=>{
+    showAuthError('');
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(err=> showAuthError(traduciErroreAuth(err)));
+  });
+  document.getElementById('authLoginBtn').addEventListener('click', ()=>{
+    const email = document.getElementById('authEmail').value.trim();
+    const pass = document.getElementById('authPassword').value;
+    if(!email || !pass){ showAuthError('Inserisci email e password.'); return; }
+    showAuthError('');
+    auth.signInWithEmailAndPassword(email, pass).catch(err=> showAuthError(traduciErroreAuth(err)));
+  });
+  document.getElementById('authRegisterBtn').addEventListener('click', ()=>{
+    const email = document.getElementById('authEmail').value.trim();
+    const pass = document.getElementById('authPassword').value;
+    if(!email || !pass){ showAuthError('Inserisci email e password.'); return; }
+    if(pass.length<6){ showAuthError('La password deve avere almeno 6 caratteri.'); return; }
+    showAuthError('');
+    auth.createUserWithEmailAndPassword(email, pass).catch(err=> showAuthError(traduciErroreAuth(err)));
+  });
+  document.getElementById('authForgotBtn').addEventListener('click', ()=>{
+    const email = document.getElementById('authEmail').value.trim();
+    if(!email){ showAuthError('Scrivi la tua email qui sopra, poi tocca di nuovo "Password dimenticata?".'); return; }
+    auth.sendPasswordResetEmail(email)
+      .then(()=> showAuthError('Email di recupero inviata!', true))
+      .catch(err=> showAuthError(traduciErroreAuth(err)));
+  });
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{ auth.signOut(); });
 
   function chiLabel(id){
     if(id==='lei') return settings.nomeLei;
@@ -669,6 +875,8 @@ Marco e Sara (colleghi)"></textarea>
       btn.classList.add('active');
       document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
       document.getElementById('view-'+btn.dataset.view).classList.add('active');
+      const sidebar = document.getElementById('gruppiSidebar');
+      if(sidebar) sidebar.classList.toggle('active', btn.dataset.view==='gruppi');
       if(btn.dataset.view==='statistiche') renderStats();
       if(btn.dataset.view==='categorie') renderCategorieTab();
       if(btn.dataset.view==='gruppi') renderGruppiTab();
@@ -1150,10 +1358,8 @@ Marco e Sara (colleghi)"></textarea>
   });
 
   /* ---------------- GRUPPI ---------------- */
-  let expandedGroupId = null;
-  let selectionMode = false;
+  let expandedGroupIds = new Set();
   let selectedGuestIds = new Set();
-  let pendingGroupId = null;
 
   function assignGuestToGroup(guestId, groupId){
     const g = guests.find(x=>x.id===guestId);
@@ -1177,47 +1383,66 @@ Marco e Sara (colleghi)"></textarea>
     }
   });
 
+  function expandAllGroups(){
+    expandedGroupIds = new Set([...groups.map(g=>g.id), '']);
+    renderGruppiTab();
+  }
+  function collapseAllGroups(){
+    expandedGroupIds = new Set();
+    renderGruppiTab();
+  }
+  function deselectAllGuests(){
+    selectedGuestIds.clear();
+    renderGruppiTab();
+  }
+  document.getElementById('expandAllBtn').addEventListener('click', expandAllGroups);
+  document.getElementById('collapseAllBtn').addEventListener('click', collapseAllGroups);
+  document.getElementById('deselectAllBtn').addEventListener('click', deselectAllGuests);
+  document.getElementById('expandAllBtnDesktop').addEventListener('click', expandAllGroups);
+  document.getElementById('collapseAllBtnDesktop').addEventListener('click', collapseAllGroups);
+  document.getElementById('deselectAllBtnDesktop').addEventListener('click', deselectAllGuests);
+  document.getElementById('scrollTopBtn').addEventListener('click', ()=>{
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
   function dragRowHtml(g){
     const linked = getLinkedPlusOne(g.id);
     const plusSmall = linked ? (' +1: '+linked.nome) : (g.plusOne ? (' +1'+(g.plusOneNome?': '+g.plusOneNome:'')) : '');
-    if(selectionMode){
-      const checked = selectedGuestIds.has(g.id) ? 'checked' : '';
-      return `<div class="drag-row selectable" data-guest-id="${g.id}">
-        <label class="select-check"><input type="checkbox" class="row-select-cb" data-guest-id="${g.id}" ${checked}></label>
-        <span class="drag-name">${g.nome}<span class="small">${plusSmall}</span></span>
-      </div>`;
-    }
+    const checked = selectedGuestIds.has(g.id) ? 'checked' : '';
     return `<div class="drag-row" data-guest-id="${g.id}">
+      <label class="select-check"><input type="checkbox" class="row-select-cb" data-guest-id="${g.id}" ${checked}></label>
       <span class="drag-handle">⠿</span>
       <span class="drag-name">${g.nome}<span class="small">${plusSmall}</span></span>
       <button class="drag-edit-btn" data-guest-id="${g.id}" title="Modifica">✏️</button>
     </div>`;
   }
 
-  function updateBulkMoveBar(){
-    const bar = document.getElementById('bulkMoveBar');
-    if(!selectionMode || selectedGuestIds.size===0){ bar.style.display='none'; return; }
-    bar.style.display='flex';
-    document.getElementById('bulkSelCount').textContent = `${selectedGuestIds.size} selezionat${selectedGuestIds.size===1?'o':'i'}`;
-    const sel = document.getElementById('bulkMoveTarget');
-    const prevVal = sel.value;
-    sel.innerHTML = '<option value="" disabled selected>Sposta in...</option>'
-      + '<option value="__none__">Senza gruppo</option>'
-      + groups.map(gr=>`<option value="${gr.id}">${gr.nome}</option>`).join('');
-    if(prevVal && [...sel.options].some(o=>o.value===prevVal)) sel.value = prevVal;
+  function updateSelectionBar(){
+    const size = selectedGuestIds.size;
+    const bar = document.getElementById('deselectBar');
+    if(size===0){ bar.style.display='none'; }
+    else {
+      bar.style.display='flex';
+      document.getElementById('bulkSelCount').textContent = `${size} selezionat${size===1?'o':'i'}`;
+    }
+    const desktopBtn = document.getElementById('deselectAllBtnDesktop');
+    if(desktopBtn){
+      desktopBtn.style.display = size===0 ? 'none' : 'flex';
+      const countEl = document.getElementById('sidebarSelCount');
+      if(countEl) countEl.textContent = size;
+    }
   }
 
   function renderGruppiTab(){
     const container = document.getElementById('groupsContainer');
-    container.classList.toggle('selecting', selectionMode);
     let html = '';
     groups.forEach(gr=>{
       const members = guests.filter(g=>g.groupId===gr.id).sort((a,b)=>(a.order||0)-(b.order||0));
-      const isExpanded = selectionMode || gr.id === expandedGroupId;
+      const isExpanded = expandedGroupIds.has(gr.id);
       html += `
       <div class="group-block${isExpanded?' expanded':''}" data-group-id="${gr.id}">
         <div class="group-header">
-            <span class="group-drag-handle" title="Trascina per riordinare i gruppi">⠿</span>
+          <span class="group-drag-handle" title="Trascina per riordinare i gruppi">⠿</span>
           <input class="group-name-input" value="${gr.nome}" data-group-id="${gr.id}">
           <span class="group-chevron">▾</span>
           <span class="group-count">${members.length} person${members.length===1?'a':'e'}</span>
@@ -1239,7 +1464,7 @@ Marco e Sara (colleghi)"></textarea>
       </div>`;
     });
     const ungrouped = guests.filter(g=>!g.groupId).sort((a,b)=>(a.order||0)-(b.order||0));
-    const ungroupedExpanded = selectionMode || expandedGroupId==='';
+    const ungroupedExpanded = expandedGroupIds.has('');
     html += `
     <div class="group-block${ungroupedExpanded?' expanded':''}" data-group-id="">
       <div class="group-header">
@@ -1253,19 +1478,16 @@ Marco e Sara (colleghi)"></textarea>
     </div>`;
     container.innerHTML = html;
 
-    if(selectionMode){
-      container.querySelectorAll('.row-select-cb').forEach(cb=>{
-        cb.addEventListener('change', ()=>{
-          if(cb.checked) selectedGuestIds.add(cb.dataset.guestId); else selectedGuestIds.delete(cb.dataset.guestId);
-          updateBulkMoveBar();
-        });
+    container.querySelectorAll('.row-select-cb').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        if(cb.checked) selectedGuestIds.add(cb.dataset.guestId); else selectedGuestIds.delete(cb.dataset.guestId);
+        updateSelectionBar();
       });
-    } else {
-      container.querySelectorAll('.drag-row').forEach(row=> setupDragForRow(row));
-      container.querySelectorAll('.drag-edit-btn').forEach(btn=>{
-        btn.addEventListener('click', (e)=>{ e.stopPropagation(); const g=guests.find(x=>x.id===btn.dataset.guestId); if(g) openModal(g); });
-      });
-    }
+    });
+    container.querySelectorAll('.drag-row').forEach(row=> setupDragForRow(row));
+    container.querySelectorAll('.drag-edit-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{ e.stopPropagation(); const g=guests.find(x=>x.id===btn.dataset.guestId); if(g) openModal(g); });
+    });
     container.querySelectorAll('.group-block').forEach(block=> setupDragForGroupBlock(block));
     container.querySelectorAll('.group-name-input').forEach(inp=>{
       inp.addEventListener('change', ()=>{
@@ -1277,9 +1499,8 @@ Marco e Sara (colleghi)"></textarea>
       const gid = block.dataset.groupId;
       const header = block.querySelector('.group-header');
       header.addEventListener('click', (e)=>{
-        if(e.target.closest('input, button, .group-drag-handle')) return;
-        if(selectionMode) return;
-        expandedGroupId = (expandedGroupId===gid) ? null : gid;
+        if(e.target.closest('input, button, .group-drag-handle, .select-check')) return;
+        if(expandedGroupIds.has(gid)) expandedGroupIds.delete(gid); else expandedGroupIds.add(gid);
         renderGruppiTab();
       });
     });
@@ -1318,30 +1539,100 @@ Marco e Sara (colleghi)"></textarea>
     });
     container.querySelectorAll('.ge-edit').forEach(btn=> btn.addEventListener('click', ()=>openGroupEditModal(btn.dataset.groupId)));
     container.querySelectorAll('.ge-del').forEach(btn=> btn.addEventListener('click', ()=>deleteGroup(btn.dataset.groupId)));
-    updateBulkMoveBar();
+    updateSelectionBar();
+    renderGruppiSidebar();
   }
 
-  document.getElementById('toggleSelectModeBtn').addEventListener('click', ()=>{
-    selectionMode = !selectionMode;
-    if(!selectionMode) selectedGuestIds.clear();
-    document.getElementById('toggleSelectModeBtn').textContent = selectionMode ? 'Annulla selezione' : '☑️ Seleziona più persone';
-    renderGruppiTab();
-  });
-
-  document.getElementById('bulkMoveGoBtn').addEventListener('click', ()=>{
-    const target = document.getElementById('bulkMoveTarget').value;
-    if(!target || selectedGuestIds.size===0) return;
-    const groupId = target==='__none__' ? '' : target;
-    let nextOrder = guests.filter(g=>(g.groupId||'')===groupId).length;
-    selectedGuestIds.forEach(id=>{
-      const g = guests.find(x=>x.id===id);
-      if(g){ g.groupId = groupId; g.order = nextOrder++; }
+  function renderGruppiSidebar(){
+    const sidebarList = document.getElementById('gruppiSidebarList');
+    if(!sidebarList) return;
+    let html = '';
+    groups.forEach(gr=>{
+      const count = guests.filter(g=>g.groupId===gr.id).length;
+      html += `<div class="sidebar-item" data-group-id="${gr.id}">
+        <span class="sidebar-drag-handle" title="Trascina per riordinare">⠿</span>
+        <span class="sidebar-item-name">${gr.nome}</span>
+        <span class="sidebar-item-count">${count}</span>
+      </div>`;
     });
-    saveGuests();
-    selectedGuestIds.clear();
+    const ungroupedCount = guests.filter(g=>!g.groupId).length;
+    html += `<div class="sidebar-item sidebar-item-ungrouped" data-group-id="">
+      <span class="sidebar-item-name">Senza gruppo</span>
+      <span class="sidebar-item-count">${ungroupedCount}</span>
+    </div>`;
+    sidebarList.innerHTML = html;
+
+    sidebarList.querySelectorAll('.sidebar-item').forEach(item=>{
+      item.addEventListener('click', (e)=>{
+        if(e.target.closest('.sidebar-drag-handle')) return;
+        const gid = item.dataset.groupId;
+        expandedGroupIds.add(gid);
+        renderGruppiTab();
+        requestAnimationFrame(()=>{
+          const freshBlock = document.querySelector(`.group-block[data-group-id="${gid}"]`);
+          if(freshBlock) freshBlock.scrollIntoView({behavior:'smooth', block:'start'});
+        });
+      });
+    });
+    sidebarList.querySelectorAll('.sidebar-drag-handle').forEach(handle=> setupDragForSidebarItem(handle));
+  }
+
+  function syncGroupOrderFromSidebarDom(){
+    const list = document.getElementById('gruppiSidebarList');
+    if(!list) return;
+    const orderedIds = Array.from(list.querySelectorAll('.sidebar-item'))
+      .map(el=>el.dataset.groupId)
+      .filter(id=>id!=='');
+    groups.sort((a,b)=> orderedIds.indexOf(a.id) - orderedIds.indexOf(b.id));
+    saveGroups();
     renderGruppiTab();
-    renderAll();
-  });
+  }
+
+  function setupDragForSidebarItem(handle){
+    const item = handle.closest('.sidebar-item');
+    handle.addEventListener('pointerdown', (e)=>{
+      if(e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      const list = document.getElementById('gruppiSidebarList');
+      const rect = item.getBoundingClientRect();
+      const offsetY = e.clientY - rect.top;
+      const placeholder = document.createElement('div');
+      placeholder.className = 'sidebar-drag-placeholder';
+      placeholder.style.height = rect.height+'px';
+      list.insertBefore(placeholder, item);
+      item.classList.add('sidebar-dragging');
+      item.style.width = rect.width+'px';
+      item.style.left = rect.left+'px';
+      item.style.top = rect.top+'px';
+      document.body.appendChild(item);
+      try{ handle.setPointerCapture(e.pointerId); }catch(err){}
+
+      function onMove(ev){
+        item.style.top = (ev.clientY - offsetY)+'px';
+        item.style.pointerEvents = 'none';
+        const elBelow = document.elementFromPoint(ev.clientX, ev.clientY);
+        item.style.pointerEvents = '';
+        if(!elBelow) return;
+        const targetItem = elBelow.closest('.sidebar-item');
+        if(targetItem && targetItem!==item && targetItem.dataset.groupId!=='' && targetItem.parentNode===list){
+          const tRect = targetItem.getBoundingClientRect();
+          const before = ev.clientY < tRect.top + tRect.height/2;
+          list.insertBefore(placeholder, before ? targetItem : targetItem.nextSibling);
+        }
+      }
+      function onUp(ev){
+        try{ handle.releasePointerCapture(ev.pointerId); }catch(err){}
+        handle.removeEventListener('pointermove', onMove);
+        handle.removeEventListener('pointerup', onUp);
+        item.classList.remove('sidebar-dragging');
+        item.style.position=''; item.style.left=''; item.style.top=''; item.style.width=''; item.style.pointerEvents='';
+        if(placeholder.parentNode){ placeholder.parentNode.insertBefore(item, placeholder); placeholder.remove(); }
+        syncGroupOrderFromSidebarDom();
+      }
+      handle.addEventListener('pointermove', onMove);
+      handle.addEventListener('pointerup', onUp);
+    });
+  }
 
   function deleteGroup(gid){
     const gr = groups.find(x=>x.id===gid);
@@ -1351,18 +1642,28 @@ Marco e Sara (colleghi)"></textarea>
     const existingUngrouped = guests.filter(g=>!g.groupId).sort((a,b)=>(a.order||0)-(b.order||0));
     [...existingUngrouped, ...freed].forEach((g,idx)=>{ g.groupId=''; g.order=idx; });
     groups = groups.filter(x=>x.id!==gid);
+    expandedGroupIds.delete(gid);
     saveGroups(); saveGuests();
     renderGruppiTab(); renderAll();
   }
 
-  function syncOrderFromDom(){
-    document.querySelectorAll('#groupsContainer .group-members').forEach(container=>{
-      const gid = container.dataset.groupId || '';
-      Array.from(container.querySelectorAll('.drag-row')).forEach((row,idx)=>{
-        const g = guests.find(x=>x.id===row.dataset.guestId);
-        if(g){ g.groupId = gid; g.order = idx; }
-      });
+  function moveGuestsTo(idsSet, targetGroupId, targetIndex){
+    const moving = guests.filter(g=>idsSet.has(g.id));
+    if(!moving.length) return;
+    const prevGroupIds = new Set(moving.map(g=>g.groupId||''));
+    moving.sort((a,b)=>(a.order||0)-(b.order||0));
+
+    const targetExisting = guests.filter(g=>(g.groupId||'')===targetGroupId && !idsSet.has(g.id)).sort((a,b)=>(a.order||0)-(b.order||0));
+    const idx = Math.max(0, Math.min(targetIndex, targetExisting.length));
+    const newTargetList = [...targetExisting.slice(0,idx), ...moving, ...targetExisting.slice(idx)];
+    newTargetList.forEach((g,i)=>{ g.groupId = targetGroupId; g.order = i; });
+
+    prevGroupIds.forEach(gid=>{
+      if(gid===targetGroupId) return;
+      const remaining = guests.filter(g=>(g.groupId||'')===gid).sort((a,b)=>(a.order||0)-(b.order||0));
+      remaining.forEach((g,i)=>{ g.order = i; });
     });
+
     saveGuests();
     renderGruppiTab();
     renderAll();
@@ -1373,6 +1674,9 @@ Marco e Sara (colleghi)"></textarea>
     handle.addEventListener('pointerdown', (e)=>{
       if(e.button !== undefined && e.button !== 0) return;
       e.preventDefault();
+      const draggedId = row.dataset.guestId;
+      const movingIds = (selectedGuestIds.size>0 && selectedGuestIds.has(draggedId)) ? new Set(selectedGuestIds) : new Set([draggedId]);
+
       const rect = row.getBoundingClientRect();
       const offsetY = e.clientY - rect.top;
       const placeholder = document.createElement('div');
@@ -1383,6 +1687,13 @@ Marco e Sara (colleghi)"></textarea>
       row.style.width = rect.width+'px';
       row.style.left = rect.left+'px';
       row.style.top = rect.top+'px';
+      if(movingIds.size>1){
+        const badge = document.createElement('span');
+        badge.textContent = ' +' + (movingIds.size-1) + ' altri';
+        badge.style.cssText = 'font-size:11px;color:var(--magenta);font-weight:700;margin-left:6px;';
+        const nameEl = row.querySelector('.drag-name');
+        if(nameEl) nameEl.appendChild(badge);
+      }
       document.body.appendChild(row);
       try{ handle.setPointerCapture(e.pointerId); }catch(err){}
 
@@ -1406,10 +1717,27 @@ Marco e Sara (colleghi)"></textarea>
         try{ handle.releasePointerCapture(ev.pointerId); }catch(err){}
         handle.removeEventListener('pointermove', onMove);
         handle.removeEventListener('pointerup', onUp);
+
+        const container = placeholder.parentNode;
         row.classList.remove('dragging-row');
         row.style.position=''; row.style.left=''; row.style.top=''; row.style.width=''; row.style.pointerEvents='';
-        if(placeholder.parentNode){ placeholder.parentNode.insertBefore(row, placeholder); placeholder.remove(); }
-        syncOrderFromDom();
+        if(row.parentNode) row.parentNode.removeChild(row);
+
+        if(container){
+          const targetGroupId = container.dataset.groupId || '';
+          const siblings = Array.from(container.children);
+          const placeholderPos = siblings.indexOf(placeholder);
+          let idx = 0;
+          for(let i=0;i<placeholderPos;i++){
+            const sib = siblings[i];
+            if(sib.classList && sib.classList.contains('drag-row') && !movingIds.has(sib.dataset.guestId)) idx++;
+          }
+          placeholder.remove();
+          moveGuestsTo(movingIds, targetGroupId, idx);
+        } else {
+          placeholder.remove();
+          renderGruppiTab();
+        }
       }
       handle.addEventListener('pointermove', onMove);
       handle.addEventListener('pointerup', onUp);
